@@ -6,7 +6,7 @@
 
 // [MODIFIED v6285 Phase 5] Define the exact keys and order for all snapshot data
 const f3SnapshotKeys = [
-    'quoteId', 'issueDate', 'dueDate', 
+    'quoteId', 'issueDate', 'dueDate',
     'customer.name', 'customer.address', 'customer.phone', 'customer.email'
 ];
 const f1SnapshotKeys = [
@@ -26,8 +26,7 @@ const getNestedValue = (obj, path) => {
 
 /**
  * Converts the application's quote data object into a comprehensive CSV formatted string,
- * including all detailed item properties and 
-LF status.
+ * including all detailed item properties and LF status.
  * @param {object} quoteData The application's quote data.
  * @returns {string} A string in CSV format.
  */
@@ -40,9 +39,9 @@ export function dataToCsv(quoteData) {
 
     // --- [MODIFIED v6285 Phase 5] Create Project Summary Header and Row ---
     const projectHeaders = [...f3SnapshotKeys, ...f1SnapshotKeys];
-    
+
     const f1Snapshot = quoteData.f1Snapshot || {};
-    
+
     const projectValues = [
         // F3 Values
         quoteData.quoteId || '',
@@ -58,55 +57,59 @@ export function dataToCsv(quoteData) {
             return (value !== null && value !== undefined) ? value : '';
         })
     ].map(value => {
-        const strValue = String(value).replace(/\n/g, ' '); // Replace newlines in addresses
-        if (strValue.includes(',')) return `"${strValue}"`;
+        // [MODIFIED] 強化 CSV 儲存邏輯
+        let strValue = (value === null || value === undefined) ? '' : String(value);
+        strValue = strValue.replace(/"/g, '""'); // 1. 轉義欄位內部的引號
+        strValue = strValue.replace(/\n/g, ' '); // 2. 替換換行符
+        
+        // 3. [FIX] 如果包含逗號、空格或引號，則使用引號包覆
+        if (strValue.includes(',') || strValue.includes(' ') || strValue.includes('"')) {
+            return `"${strValue}"`;
+        }
         return strValue;
     });
 
     // --- Create Item Header and Rows ---
     const itemHeaders = [
-        '#', 'Width', 'Height', 'Type', 'Price', 
-        'Location', 'F-Name', 'F-Color', 'Over', 'O/I', 'L/R', 
-    
-    'Dual', 'Chain', 'Winder', 'Motor', 'IsLF'
+        '#', 'Width', 'Height', 'Type', 'Price',
+        'Location', 'F-Name', 'F-Color', 'Over', 'O/I', 'L/R',
+        'Dual', 'Chain', 'Winder', 'Motor', 'IsLF'
     ];
-    
+
     const itemRows = productData.items.map((item, index) => {
         if (item.width || item.height) {
             const rowData = [
                 index + 1,
-               
- item.width || '',
+                item.width || '',
                 item.height || '',
                 item.fabricType || '',
                 item.linePrice !== null ? item.linePrice.toFixed(2) : '',
-                item.location || 
-'',
+                item.location || '',
                 item.fabric || '',
                 item.color || '',
                 item.over || '',
                 item.oi || '',
-       
-         item.lr || '',
+                item.lr || '',
                 item.dual || '',
                 item.chain || '',
                 item.winder || '',
-              
-  item.motor || '',
+                item.motor || '',
                 lfModifiedRowIndexes.includes(index) ? 1 : 0
             ];
 
             return rowData.map(value => {
-                const strValue = String(value);
-         
-       if (strValue.includes(',')) {
+                // [MODIFIED] 強化 CSV 儲存邏輯 (同樣應用於項目行)
+                let strValue = (value === null || value === undefined) ? '' : String(value);
+                strValue = strValue.replace(/"/g, '""');
+                strValue = strValue.replace(/\n/g, ' ');
+                
+                if (strValue.includes(',') || strValue.includes(' ') || strValue.includes('"')) {
                     return `"${strValue}"`;
                 }
                 return strValue;
             }).join(',');
         }
-   
-     return null;
+        return null;
     }).filter(row => row !== null);
 
 
@@ -122,19 +125,56 @@ export function dataToCsv(quoteData) {
 
 
 /**
+ * [PRIVATE] 輔助函式，使用正規表示式來安全地解析 CSV 列，能處理引號內的逗號。
+ * @param {string} line - 單行 CSV 字串。
+ * @returns {Array<string>} - 解析後的欄位陣列。
+ */
+function _parseCsvLine(line) {
+    const values = [];
+    // 這個 Regex 匹配：
+    // 1. (?:^|,) - 匹配一行的開頭或一個逗號
+    // 2. ("(?:[^"]|"")*"|[^,]*) - 匹配一個帶引號的欄位 (允許內部有雙引號 " ") 或 一個不帶引號的欄位 (直到下個逗號)
+    const regex = /(?:^|,|)(\"(?:[^\"]|\"\")*\"|[^,]*)/g;
+    let match;
+    while (match = regex.exec(line)) {
+        if (match[1] === undefined || match[1] === null) continue;
+        
+        let value = match[1];
+
+        // 移除開頭的逗號（如果有的話）
+        if (value.startsWith(',')) {
+            value = value.substring(1);
+        }
+
+        // 移除引號並反轉義
+        if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.substring(1, value.length - 1).replace(/""/g, '"');
+        }
+        values.push(value.trim());
+    }
+    
+    // 處理行尾有空值的情況
+    if (line.endsWith(',')) {
+        values.push('');
+    }
+
+    return values;
+}
+
+
+/**
  * Converts a CSV formatted string into an object containing item objects and LF indexes.
  * This function is "pure" and has no external dependencies.
- * @param {string} csvString 
-The string containing CSV data.
+ * @param {string} csvString The string containing CSV data.
  * @returns {{items: Array<object>, lfIndexes: Array<number>, f1Snapshot: object, f3Data: object}|null} An object with items, LF status, F1 snapshot, and F3 data, or null if parsing fails.
  */
 export function csvToData(csvString) {
     try {
         const lines = csvString.trim().split('\n');
-        
+
         // [MODIFIED v6285 Phase 5] Parse new 4-part format
         if (lines.length < 4) {
-             // Fallback for old format (Phase 3/4)
+            // Fallback for old format (Phase 3/4)
             return csvToData_OldFormat(csvString);
         }
 
@@ -143,8 +183,8 @@ export function csvToData(csvString) {
         const itemHeaderLine = lines[3];
         const itemDataLines = lines.slice(4);
 
-        const projectHeaders = projectHeaderLine.split(',');
-        const projectValues = projectDataLine.split(','); // Simplified parse, assumes no commas in F3 data for now
+        const projectHeaders = _parseCsvLine(projectHeaderLine);
+        const projectValues = _parseCsvLine(projectDataLine);
 
         // --- 1. Parse Project Data (F1 + F3) ---
         const f1Snapshot = {};
@@ -152,10 +192,21 @@ export function csvToData(csvString) {
 
         projectHeaders.forEach((header, index) => {
             const value = projectValues[index] || null;
-            if (!value) return; // Skip empty values
+            if (value === null || value === '') return; // [MODIFIED] 檢查空字串
 
-            const numValue = parseFloat(value);
-            const finalValue = isNaN(numValue) ? value : numValue;
+            let finalValue;
+            
+            // [FIX] 檢查是否為 F1 數字鍵
+            if (f1SnapshotKeys.includes(header)) {
+                // 這是 F1 key，嘗試轉為數字
+                const numValue = parseFloat(value);
+                finalValue = isNaN(numValue) ? null : numValue;
+            } else {
+                // 這是 F3 key (或其他字串)，保持為字串
+                finalValue = value;
+            }
+
+            if (finalValue === null) return; // 不儲存無效值
 
             if (f1SnapshotKeys.includes(header)) {
                 f1Snapshot[header] = finalValue;
@@ -170,7 +221,7 @@ export function csvToData(csvString) {
         // --- 2. Parse Item Data ---
         const items = [];
         const lfIndexes = [];
-        const itemHeaders = itemHeaderLine.split(',');
+        const itemHeaders = _parseCsvLine(itemHeaderLine);
         const isLfIndex = itemHeaders.indexOf('IsLF');
 
         itemDataLines.forEach((line) => {
@@ -179,8 +230,10 @@ export function csvToData(csvString) {
                 return;
             }
             
-            const values = trimmedLine.split(',');
+            // [FIX] 使用新的 CSV 解析器
+            const values = _parseCsvLine(trimmedLine);
 
+            // [FIX] 移除值的引號 (輔助函式已內嵌至 _parseCsvLine)
             const item = {
                 itemId: `item-${Date.now()}-${items.length}`,
                 width: parseInt(values[1], 10) || null,
@@ -199,7 +252,7 @@ export function csvToData(csvString) {
                 motor: values[14] || ''
             };
             items.push(item);
-            
+
             if (isLfIndex > -1) {
                 const isLf = parseInt(values[isLfIndex], 10) === 1;
                 if (isLf) {
@@ -231,8 +284,8 @@ function csvToData_OldFormat(csvString) {
     if (headerIndex === -1) return null; // Not a recognized format
 
     const headerLine = lines[headerIndex];
-    const headers = headerLine.split(',');
-    
+    const headers = headerLine.split(','); // Old parser OK here
+
     const f1Snapshot = {};
     const snapshotKeys = Object.keys(initialState.quoteData.f1Snapshot);
     const snapshotIndices = {};
@@ -248,20 +301,20 @@ function csvToData_OldFormat(csvString) {
     dataLines.forEach((line, index) => {
         const trimmedLine = line.trim();
         if (!trimmedLine || trimmedLine.toLowerCase().startsWith('total')) {
-            return; 
+            return;
         }
-        
-        const values = trimmedLine.split(',');
+
+        const values = trimmedLine.split(','); // Old parser OK here
 
         if (values[0] === 'F1_SNAPSHOT' && values.length >= 3) {
-             // This is the Phase 3 format, not Phase 4. Handle it anyway.
-             const key = values[1];
-             const value = values[2];
-             if (f1Snapshot.hasOwnProperty(key)) {
-                 const numValue = parseFloat(value);
-                 f1Snapshot[key] = isNaN(numValue) ? value : numValue;
-             }
-             return; // Skip to the next line
+            // This is the Phase 3 format, not Phase 4. Handle it anyway.
+            const key = values[1];
+            const value = values[2];
+            if (f1Snapshot.hasOwnProperty(key)) {
+                const numValue = parseFloat(value);
+                f1Snapshot[key] = isNaN(numValue) ? value : numValue;
+            }
+            return; // Skip to the next line
         }
 
         if (index === 0) {
@@ -293,7 +346,7 @@ function csvToData_OldFormat(csvString) {
             motor: values[14] || ''
         };
         items.push(item);
-        
+
         if (isLfIndex > -1) {
             const isLf = parseInt(values[isLfIndex], 10) === 1;
             if (isLf) {
