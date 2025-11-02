@@ -4,6 +4,9 @@
  * @fileoverview Utility functions for parsing and stringifying CSV data.
  */
 
+// [FIX] 匯入遺漏的 initialState 模組，以修復 csvToData_OldFormat 的 ReferenceError
+import { initialState } from '../config/initial-state.js';
+
 // [MODIFIED v6285 Phase 5] Define the exact keys and order for all snapshot data
 const f3SnapshotKeys = [
     'quoteId', 'issueDate', 'dueDate',
@@ -131,20 +134,21 @@ export function dataToCsv(quoteData) {
  */
 function _parseCsvLine(line) {
     const values = [];
-    // 這個 Regex 匹配：
-    // 1. (?:^|,) - 匹配一行的開頭或一個逗號
-    // 2. ("(?:[^"]|"")*"|[^,]*) - 匹配一個帶引號的欄位 (允許內部有雙引號 " ") 或 一個不帶引號的欄位 (直到下個逗號)
-    const regex = /(?:^|,|)(\"(?:[^\"]|\"\")*\"|[^,]*)/g;
+    
+    // [FIX] 修正 Regex：
+    // 1. 移除第一個群組 (?:^|,) 最後多餘的 |，這會導致無限迴圈
+    // 2. 將第二個群組改為捕獲群組 ((...))，確保 match[1] 始終是我們想要的欄位內容
+    const regex = /(?:^|,)((?:"(?:[^"]|"")*"|[^,]*))/g;
     let match;
     while (match = regex.exec(line)) {
         if (match[1] === undefined || match[1] === null) continue;
-        
+
         let value = match[1];
 
-        // 移除開頭的逗號（如果有的話）
-        if (value.startsWith(',')) {
-            value = value.substring(1);
-        }
+        // [FIX] 移除這個錯誤的邏輯。match[1] (捕獲群組) 不會包含開頭的逗號。
+        // if (value.startsWith(',')) {
+        //     value = value.substring(1);
+        // }
 
         // 移除引號並反轉義
         if (value.startsWith('"') && value.endsWith('"')) {
@@ -152,7 +156,7 @@ function _parseCsvLine(line) {
         }
         values.push(value.trim());
     }
-    
+
     // 處理行尾有空值的情況
     if (line.endsWith(',')) {
         values.push('');
@@ -195,7 +199,7 @@ export function csvToData(csvString) {
             if (value === null || value === '') return; // [MODIFIED] 檢查空字串
 
             let finalValue;
-            
+
             // [FIX] 檢查是否為 F1 數字鍵
             if (f1SnapshotKeys.includes(header)) {
                 // 這是 F1 key，嘗試轉為數字
@@ -229,7 +233,7 @@ export function csvToData(csvString) {
             if (!trimmedLine || trimmedLine.toLowerCase().startsWith('total')) {
                 return;
             }
-            
+
             // [FIX] 使用新的 CSV 解析器
             const values = _parseCsvLine(trimmedLine);
 
