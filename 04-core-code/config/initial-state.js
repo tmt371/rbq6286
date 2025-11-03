@@ -29,6 +29,8 @@ export const initialState = {
 
         // --- K2 (Fabric/LF) State ---
         lfSelectedRowIndexes: [],
+        // [NEW] Add state for SSet selection, independent of lfSelectedRowIndexes
+        sSetSelectedRowIndexes: [],
 
         // [REMOVED] lfModifiedRowIndexes is moved to quoteData.uiMetadata for persistence.
 
@@ -97,7 +99,8 @@ export const initialState = {
 
                         width: null, height: null, fabricType: null, linePrice: null,
                         location: '', fabric: '', color: '', over: '',
-                        oi: '', lr: '', dual: '', chain: null, winder: '',
+                        oi: '', lr: '', dual: '', chain: null,
+                        winder: '',
                         motor: ''
                     }
                 ],

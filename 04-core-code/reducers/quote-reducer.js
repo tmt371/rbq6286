@@ -155,6 +155,7 @@ export function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
 
+        
         case QUOTE_ACTION_TYPES.CYCLE_K3_PROPERTY: {
             items = [...productData.items];
             const { rowIndex, column } = action.payload;
@@ -262,6 +263,33 @@ export function quoteReducer(state, action, { productFactory, configManager }) {
                 if (rowIndexes.includes(index)) {
                     return { ...item, fabric: '', color: '' };
                 }
+                return item;
+            });
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+
+        // [NEW] SSet Feature: Batch update fabric/color for specific indexes based on their type
+        case QUOTE_ACTION_TYPES.BATCH_UPDATE_PROPERTIES_FOR_INDEXES: {
+            const { selectedIndexes, typeMap } = action.payload;
+            const selectedIndexesSet = new Set(selectedIndexes);
+
+            items = productData.items.map((item, index) => {
+                // Check if this item is one of the selected ones
+                if (selectedIndexesSet.has(index)) {
+                    const itemType = item.fabricType;
+                    // Check if the typeMap has new data for this item's type
+                    const newProps = typeMap[itemType];
+                    
+                    if (newProps && (newProps.fabric !== undefined || newProps.color !== undefined)) {
+                        return {
+                            ...item,
+                            fabric: newProps.fabric,
+                            color: newProps.color,
+                        };
+                    }
+                }
+                // Return original item if not selected or no matching type in map
                 return item;
             });
             productData = { ...productData, items };

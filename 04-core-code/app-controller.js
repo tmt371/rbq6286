@@ -88,6 +88,8 @@ export class AppController {
         this.eventAggregator.subscribe(EVENTS.LOCATION_INPUT_ENTER_PRESSED, (data) => delegate('handleLocationInputEnter', data));
         this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_LF_EDIT_MODE, () => delegate('handleLFEditRequest'));
         this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_LF_DELETE_MODE, () => delegate('handleLFDeleteRequest'));
+        // [NEW] Subscribe to SSet event
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_SSET_MODE, () => delegate('handleSSetRequest'));
         this.eventAggregator.subscribe(EVENTS.USER_TOGGLED_K3_EDIT_MODE, () => delegate('handleToggleK3EditMode')); 
         this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_BATCH_CYCLE, (data) => delegate('handleBatchCycle', data));
 

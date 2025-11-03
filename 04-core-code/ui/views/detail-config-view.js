@@ -80,7 +80,7 @@ export class DetailConfigView {
     handleSequenceCellClick({ rowIndex }) {
         const { ui } = this.stateService.getState();
         const { activeEditMode } = ui;
-        if (activeEditMode === 'K2_LF_SELECT' || activeEditMode === 'K2_LF_DELETE_SELECT') {
+        if (activeEditMode === 'K2_LF_SELECT' || activeEditMode === 'K2_LF_DELETE_SELECT' || activeEditMode === 'K2_SSET_SELECT') {
             this.k2View.handleSequenceCellClick({ rowIndex });
         }
     }
@@ -91,6 +91,11 @@ export class DetailConfigView {
 
     handleLFDeleteRequest() {
         this.k2View.handleLFDeleteRequest();
+    }
+
+    // [NEW] Delegate SSet request to K2 view
+    handleSSetRequest() {
+        this.k2View.handleSSetRequest();
     }
 
     handleToggleK3EditMode() {

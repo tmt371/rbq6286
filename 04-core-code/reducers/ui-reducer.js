@@ -4,6 +4,7 @@ import { initialState } from '../config/initial-state.js';
 
 export function uiReducer(state, action) {
     switch (action.type) {
+        
         case UI_ACTION_TYPES.SET_CURRENT_VIEW:
             return { ...state, currentView: action.payload.viewName };
         case UI_ACTION_TYPES.SET_VISIBLE_COLUMNS:
@@ -53,6 +54,21 @@ export function uiReducer(state, action) {
         }
         case UI_ACTION_TYPES.CLEAR_LF_SELECTION:
             return { ...state, lfSelectedRowIndexes: [] };
+
+        // [NEW] K2 (SSet) State Reducers
+        case UI_ACTION_TYPES.TOGGLE_SSET_SELECTION: {
+            const selectedIndexes = new Set(state.sSetSelectedRowIndexes);
+            if (selectedIndexes.has(action.payload.rowIndex)) {
+                selectedIndexes.delete(action.payload.rowIndex);
+            } else {
+                selectedIndexes.add(action.payload.rowIndex);
+            }
+            return { ...state, sSetSelectedRowIndexes: Array.from(selectedIndexes) };
+        }
+        case UI_ACTION_TYPES.CLEAR_SSET_SELECTION:
+            return { ...state, sSetSelectedRowIndexes: [] };
+
+
         case UI_ACTION_TYPES.SET_DUAL_CHAIN_MODE:
             return { ...state, dualChainMode: action.payload.mode };
         case UI_ACTION_TYPES.SET_DRIVE_ACCESSORY_MODE:

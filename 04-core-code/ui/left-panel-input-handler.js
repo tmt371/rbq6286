@@ -83,6 +83,15 @@ export class LeftPanelInputHandler {
             });
         }
 
+        // [NEW] Add listener for SSet button
+        const sSetButton = document.getElementById('btn-k2-sset');
+        if (sSetButton) {
+            sSetButton.addEventListener('click', () => {
+                this.eventAggregator.publish(EVENTS.USER_REQUESTED_SSET_MODE);
+            });
+        }
+
+
         const batchTable = document.getElementById(DOM_IDS.FABRIC_BATCH_TABLE);
         if (batchTable) {
             batchTable.addEventListener('keydown', (event) => {

@@ -90,6 +90,17 @@ export const clearLFSelection = () => ({
     type: UI_ACTION_TYPES.CLEAR_LF_SELECTION,
 });
 
+// [NEW] K2 (SSet) State
+export const toggleSSetSelection = (rowIndex) => ({
+    type: UI_ACTION_TYPES.TOGGLE_SSET_SELECTION,
+    payload: { rowIndex },
+});
+
+export const clearSSetSelection = () => ({
+    type: UI_ACTION_TYPES.CLEAR_SSET_SELECTION,
+});
+
+
 // --- K4 & K5 State ---
 export const setDualChainMode = (mode) => ({
     type: UI_ACTION_TYPES.SET_DUAL_CHAIN_MODE,

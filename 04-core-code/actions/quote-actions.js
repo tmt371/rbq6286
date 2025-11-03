@@ -100,6 +100,13 @@ export const removeLFProperties = (rowIndexes) => ({
     payload: { rowIndexes },
 });
 
+// [NEW] Action for SSet feature
+export const batchUpdatePropertiesForIndexes = (selectedIndexes, typeMap) => ({
+    type: QUOTE_ACTION_TYPES.BATCH_UPDATE_PROPERTIES_FOR_INDEXES,
+    payload: { selectedIndexes, typeMap },
+});
+
+
 // --- Summary & Metadata ---
 export const updateAccessorySummary = (data) => ({
     type: QUOTE_ACTION_TYPES.UPDATE_ACCESSORY_SUMMARY,

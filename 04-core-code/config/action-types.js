@@ -28,8 +28,11 @@ export const UI_ACTION_TYPES = {
 
     // K2 (Fabric/LF) State
     TOGGLE_LF_SELECTION: 'ui/toggleLFSelection',
-
     CLEAR_LF_SELECTION: 'ui/clearLFSelection',
+
+    // [NEW] K2 (SSet) State
+    TOGGLE_SSET_SELECTION: 'ui/toggleSSetSelection',
+    CLEAR_SSET_SELECTION: 'ui/clearSSetSelection',
 
     // K4 (Drive/Accessories) & K5 (Dual/Chain) State
     SET_DUAL_CHAIN_MODE: 'ui/setDualChainMode',
@@ -66,37 +69,38 @@ export const UI_ACTION_TYPES = {
     RESTORE_F1_SNAPSHOT: 'ui/restoreF1Snapshot',
 };
 
-export
-    const QUOTE_ACTION_TYPES = {
-        // Quote Data Root
-        SET_QUOTE_DATA: 'quote/setQuoteData',
-        RESET_QUOTE_DATA: 'quote/resetQuoteData',
+export const QUOTE_ACTION_TYPES = {
+    // Quote Data Root
+    SET_QUOTE_DATA: 'quote/setQuoteData',
+    RESET_QUOTE_DATA: 'quote/resetQuoteData',
 
-        // Item Array Operations
-        INSERT_ROW: 'quote/insertRow',
-        DELETE_ROW: 'quote/deleteRow',
-        CLEAR_ROW: 'quote/clearRow',
-        DELETE_MULTIPLE_ROWS: 'quote/deleteMultipleRows',
+    // Item Array Operations
+    INSERT_ROW: 'quote/insertRow',
+    DELETE_ROW: 'quote/deleteRow',
+    CLEAR_ROW: 'quote/clearRow',
+    DELETE_MULTIPLE_ROWS: 'quote/deleteMultipleRows',
 
-        // Individual Item Properties
-        UPDATE_ITEM_VALUE: 'quote/updateItemValue',
-        UPDATE_ITEM_PROPERTY: 'quote/updateItemProperty',
-        UPDATE_WINDER_MOTOR_PROPERTY: 'quote/updateWinderMotorProperty',
-        CYCLE_K3_PROPERTY: 'quote/cycleK3Property',
-        CYCLE_ITEM_TYPE:
-            'quote/cycleItemType',
-        SET_ITEM_TYPE: 'quote/setItemType',
+    // Individual Item Properties
+    UPDATE_ITEM_VALUE: 'quote/updateItemValue',
+    UPDATE_ITEM_PROPERTY: 'quote/updateItemProperty',
+    UPDATE_WINDER_MOTOR_PROPERTY: 'quote/updateWinderMotorProperty',
+    CYCLE_K3_PROPERTY: 'quote/cycleK3Property',
+    CYCLE_ITEM_TYPE:
+        'quote/cycleItemType',
+    SET_ITEM_TYPE: 'quote/setItemType',
 
-        // Batch Item Updates
-        BATCH_UPDATE_PROPERTY: 'quote/batchUpdateProperty',
-        BATCH_UPDATE_PROPERTY_BY_TYPE: 'quote/batchUpdatePropertyByType',
-        BATCH_UPDATE_FABRIC_TYPE: 'quote/batchUpdateFabricType',
-        BATCH_UPDATE_FABRIC_TYPE_FOR_SELECTION: 'quote/batchUpdateFabricTypeForSelection',
-        BATCH_UPDATE_LF_PROPERTIES: 'quote/batchUpdateLFProperties',
-        REMOVE_LF_PROPERTIES: 'quote/removeLFProperties',
+    // Batch Item Updates
+    BATCH_UPDATE_PROPERTY: 'quote/batchUpdateProperty',
+    BATCH_UPDATE_PROPERTY_BY_TYPE: 'quote/batchUpdatePropertyByType',
+    BATCH_UPDATE_FABRIC_TYPE: 'quote/batchUpdateFabricType',
+    BATCH_UPDATE_FABRIC_TYPE_FOR_SELECTION: 'quote/batchUpdateFabricTypeForSelection',
+    BATCH_UPDATE_LF_PROPERTIES: 'quote/batchUpdateLFProperties',
+    REMOVE_LF_PROPERTIES: 'quote/removeLFProperties',
+    // [NEW] Action for SSet feature
+    BATCH_UPDATE_PROPERTIES_FOR_INDEXES: 'quote/batchUpdatePropertiesForIndexes',
 
-        // Summary & Metadata
-        UPDATE_ACCESSORY_SUMMARY: 'quote/updateAccessorySummary',
-        ADD_LF_MODIFIED_ROWS: 'quote/addLFModifiedRows',
-        REMOVE_LF_MODIFIED_ROWS: 'quote/removeLFModifiedRows',
-    };
+    // Summary & Metadata
+    UPDATE_ACCESSORY_SUMMARY: 'quote/updateAccessorySummary',
+    ADD_LF_MODIFIED_ROWS: 'quote/addLFModifiedRows',
+    REMOVE_LF_MODIFIED_ROWS: 'quote/removeLFModifiedRows',
+};

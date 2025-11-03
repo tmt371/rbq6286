@@ -43,6 +43,8 @@ export const EVENTS = {
     LOCATION_INPUT_ENTER_PRESSED: 'locationInputEnterPressed',
     USER_REQUESTED_LF_EDIT_MODE: 'userRequestedLFEditMode',
     USER_REQUESTED_LF_DELETE_MODE: 'userRequestedLFDeleteMode',
+    // [NEW] Event for SSet mode
+    USER_REQUESTED_SSET_MODE: 'userRequestedSSetMode',
     USER_TOGGLED_K3_EDIT_MODE: 'userToggledK3EditMode',
     USER_REQUESTED_BATCH_CYCLE: 'userRequestedBatchCycle',
     DUAL_CHAIN_MODE_CHANGED: 'dualChainModeChanged',
