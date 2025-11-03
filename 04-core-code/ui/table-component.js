@@ -118,7 +118,8 @@ export class TableComponent {
         return {
             sequence: (cell, item, index, state) => {
                 // [MODIFIED] Removed obsolete state flags 'selectedRowIndex' and 'isMultiSelectMode'
-                const { multiSelectSelectedIndexes, lfSelectedRowIndexes } = state.ui;
+                // [MODIFIED] Added sSetSelectedRowIndexes
+                const { multiSelectSelectedIndexes, lfSelectedRowIndexes, sSetSelectedRowIndexes } = state.ui;
                 const currentProductKey = state.quoteData.currentProduct;
                 const items = state.quoteData.products[currentProductKey].items;
 
@@ -128,6 +129,9 @@ export class TableComponent {
                 // [MODIFIED] Simplified highlighting logic to rely only on multiSelectSelectedIndexes
                 if (lfSelectedRowIndexes.includes(index)) {
                     cell.classList.add('lf-selection-highlight');
+                } else if (sSetSelectedRowIndexes.includes(index)) {
+                    // [NEW] Add highlighting for SSet mode
+                    cell.classList.add('sset-selection-highlight');
                 } else if (isLastRowEmpty) {
                     cell.classList.add('selection-disabled');
                 } else if (multiSelectSelectedIndexes.includes(index)) {

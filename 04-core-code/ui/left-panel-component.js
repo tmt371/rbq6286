@@ -19,6 +19,8 @@ export class LeftPanelComponent {
         this.fabricColorButton = document.getElementById('btn-focus-fabric');
         this.lfButton = document.getElementById('btn-light-filter');
         this.lfDelButton = document.getElementById('btn-lf-del');
+        // [NEW] Cache the SSet button
+        this.k2SSetButton = document.getElementById('btn-k2-sset');
         this.k3EditButton = document.getElementById('btn-k3-edit');
         this.k3OverButton = document.getElementById('btn-batch-cycle-over');
         this.k3OiButton = document.getElementById('btn-batch-cycle-oi');
@@ -126,24 +128,33 @@ export class LeftPanelComponent {
             }
         }
         
-        // --- K2 Button Active/Disabled States ---
+        // [MODIFIED] Implement strict mutual exclusion for K2 buttons
         const isFCMode = activeEditMode === 'K2';
         const isLFSelectMode = activeEditMode === 'K2_LF_SELECT';
         const isLFDeleteMode = activeEditMode === 'K2_LF_DELETE_SELECT';
-        const isAnyK2ModeActive = isFCMode || isLFSelectMode || isLFDeleteMode;
+        const isSSetMode = activeEditMode === 'K2_SSET_SELECT';
+        const isAnyK2ModeActive = isFCMode || isLFSelectMode || isLFDeleteMode || isSSetMode;
 
         if (this.locationButton) this.locationButton.classList.toggle('active', activeEditMode === 'K1');
-        if (this.fabricColorButton) this.fabricColorButton.classList.toggle('active', isFCMode);
-        if (this.lfButton) this.lfButton.classList.toggle('active', isLFSelectMode);
-        if (this.lfDelButton) this.lfDelButton.classList.toggle('active', isLFDeleteMode);
         
-        // [CORRECTED] Changed check from .size > 0 to .length > 0 for arrays.
-        const hasLFModified = lfModifiedRowIndexes.length > 0;
-
-        if (this.locationButton) this.locationButton.disabled = isAnyK2ModeActive;
-        if (this.fabricColorButton) this.fabricColorButton.disabled = activeEditMode !== null && !isFCMode;
-        if (this.lfButton) this.lfButton.disabled = activeEditMode !== null && !isLFSelectMode;
-        if (this.lfDelButton) this.lfDelButton.disabled = (activeEditMode !== null && !isLFDeleteMode) || !hasLFModified;
+        if (this.fabricColorButton) {
+            this.fabricColorButton.classList.toggle('active', isFCMode);
+            this.fabricColorButton.disabled = isAnyK2ModeActive && !isFCMode;
+        }
+        if (this.lfButton) {
+            this.lfButton.classList.toggle('active', isLFSelectMode);
+            this.lfButton.disabled = isAnyK2ModeActive && !isLFSelectMode;
+        }
+        if (this.lfDelButton) {
+            const hasLFModified = lfModifiedRowIndexes.length > 0;
+            this.lfDelButton.classList.toggle('active', isLFDeleteMode);
+            // Button is disabled if ANY K2 mode is active (and it's not this one), OR if no LF-modified rows exist
+            this.lfDelButton.disabled = (isAnyK2ModeActive && !isLFDeleteMode) || !hasLFModified;
+        }
+        if (this.k2SSetButton) {
+            this.k2SSetButton.classList.toggle('active', isSSetMode);
+            this.k2SSetButton.disabled = isAnyK2ModeActive && !isSSetMode;
+        }
 
         // --- K3 Button Active/Disabled States ---
         const isK3EditMode = activeEditMode === 'K3';

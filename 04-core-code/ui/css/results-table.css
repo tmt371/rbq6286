@@ -95,6 +95,12 @@
     font-weight: bold;
 }
 
+/* [NEW] Highlighting for SSet mode selection */
+.results-table td.sset-selection-highlight {
+    background-color: #fffacd; /* Light yellow, same as LF mode */
+}
+
+
 .results-table td.multi-selected-row {
     background-color: #f8d7da;
     font-weight: bold;
