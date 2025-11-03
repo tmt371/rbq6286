@@ -109,10 +109,10 @@ export class K2FabricView {
 
     handlePanelInputEnter() {
         const { activeEditMode } = this._getState().ui;
+        const activeElement = document.activeElement;
 
         if (activeEditMode === 'K2') {
             const inputs = Array.from(document.querySelectorAll('.panel-input:not([disabled])'));
-            const activeElement = document.activeElement;
             const currentIndex = inputs.indexOf(activeElement);
             const nextInput = inputs[currentIndex + 1];
 
@@ -123,11 +123,20 @@ export class K2FabricView {
                 this._exitAllK2Modes();
             }
         } else if (activeEditMode === 'K2_LF_SELECT') {
-            // Apply LF changes and exit
-            this._applyLFChanges();
-            this._exitAllK2Modes();
+            // [FIX] Implement correct Enter key logic for LF mode
+            const lfFnameInput = document.querySelector('input[data-type="LF"][data-field="fabric"]');
+            const lfFcolorInput = document.querySelector('input[data-type="LF"][data-field="color"]');
+
+            if (activeElement === lfFnameInput && lfFcolorInput) {
+                // User pressed Enter on F-Name, move to F-Color
+                lfFcolorInput.focus();
+                lfFcolorInput.select();
+            } else if (activeElement === lfFcolorInput) {
+                // User pressed Enter on F-Color (last input), apply changes and exit
+                this._applyLFChanges();
+                this._exitAllK2Modes();
+            }
         } else if (activeEditMode === 'K2_SSET_SELECT') {
-            const activeElement = document.activeElement;
             if (activeElement === this.lastSSetInput) {
                 // If user presses Enter on the last input, apply changes
                 this._applySSetChanges();
@@ -347,7 +356,8 @@ export class K2FabricView {
                 if (isLFRow && hasSelection) {
                     const firstItem = items[lfSelectedRowIndexes[0]];
                     if (firstItem && lfModifiedRowIndexes.includes(lfSelectedRowIndexes[0])) {
-                        input.value = firstItem[input.dataset.field].replace('Light-filter ', '');
+                        // [FIX] Remove "Light-filter " prefix when populating input
+                        input.value = (firstItem[input.dataset.field] || '').replace('Light-filter ', '');
                     }
                 }
             });
