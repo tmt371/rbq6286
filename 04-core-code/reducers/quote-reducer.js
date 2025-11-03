@@ -269,10 +269,13 @@ export function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
 
-        // [NEW] SSet Feature: Batch update fabric/color for specific indexes based on their type
+        // [FIX] SSet Feature: Also clear lfModifiedRowIndexes when overwriting
         case QUOTE_ACTION_TYPES.BATCH_UPDATE_PROPERTIES_FOR_INDEXES: {
             const { selectedIndexes, typeMap } = action.payload;
             const selectedIndexesSet = new Set(selectedIndexes);
+            
+            // [NEW] Keep track of which indexes were actually modified
+            const modifiedIndexesSet = new Set();
 
             items = productData.items.map((item, index) => {
                 // Check if this item is one of the selected ones
@@ -282,6 +285,8 @@ export function quoteReducer(state, action, { productFactory, configManager }) {
                     const newProps = typeMap[itemType];
                     
                     if (newProps && (newProps.fabric !== undefined || newProps.color !== undefined)) {
+                        // [NEW] This index is being modified
+                        modifiedIndexesSet.add(index);
                         return {
                             ...item,
                             fabric: newProps.fabric,
@@ -292,8 +297,19 @@ export function quoteReducer(state, action, { productFactory, configManager }) {
                 // Return original item if not selected or no matching type in map
                 return item;
             });
+            
+            // [FIX] If SSet modified any indexes, we must remove them from lfModifiedRowIndexes
+            const newLfModifiedIndexes = state.uiMetadata.lfModifiedRowIndexes.filter(
+                index => !modifiedIndexesSet.has(index)
+            );
+            
+            const newUiMetadata = {
+                ...state.uiMetadata,
+                lfModifiedRowIndexes: newLfModifiedIndexes
+            };
+
             productData = { ...productData, items };
-            return { ...state, products: { ...state.products, [productKey]: productData } };
+            return { ...state, products: { ...state.products, [productKey]: productData }, uiMetadata: newUiMetadata };
         }
 
         case QUOTE_ACTION_TYPES.ADD_LF_MODIFIED_ROWS: {

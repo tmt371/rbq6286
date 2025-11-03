@@ -120,6 +120,14 @@ export class K2FabricView {
                 nextInput.focus();
                 nextInput.select();
             } else {
+                // [FIX] Apply the final value before exiting
+                if (activeElement && activeElement.matches('.panel-input')) {
+                    this.handlePanelInputBlur({
+                        type: activeElement.dataset.type,
+                        field: activeElement.dataset.field,
+                        value: activeElement.value
+                    });
+                }
                 this._exitAllK2Modes();
             }
         } else if (activeEditMode === 'K2_LF_SELECT') {
@@ -296,8 +304,23 @@ export class K2FabricView {
         }
 
         if (typesApplied > 0) {
-            this.stateService.dispatch(quoteActions.batchUpdatePropertiesForIndexes(sSetSelectedRowIndexes, finalTypeMap));
-            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: `Fabric details applied to ${sSetSelectedRowIndexes.length} items.` });
+            // [FIX] Identify which selected rows will actually be modified
+            const items = this._getItems();
+            const modifiedIndexes = sSetSelectedRowIndexes.filter(index => {
+                const itemType = items[index]?.fabricType;
+                return itemType && finalTypeMap[itemType];
+            });
+
+            if (modifiedIndexes.length > 0) {
+                this.stateService.dispatch(quoteActions.batchUpdatePropertiesForIndexes(modifiedIndexes, finalTypeMap));
+                
+                // [FIX] Dispatch a *second* action to remove the LF (pink) status from these modified rows
+                this.stateService.dispatch(quoteActions.removeLFModifiedRows(modifiedIndexes));
+
+                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: `Fabric details applied to ${modifiedIndexes.length} items.` });
+            } else {
+                 this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'No selected items matched the types you edited.' });
+            }
         } else {
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'No changes applied. Please fill in both F-Name and F-Color for a type.' });
         }
