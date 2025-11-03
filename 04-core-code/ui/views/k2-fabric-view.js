@@ -71,6 +71,10 @@ export class K2FabricView {
                 this._enterFCMode(false);
             }
         } else {
+            // [FIX] 如果是從 N&C 模式退出，手動觸發 blur
+            if (currentMode === 'K2' && document.activeElement.matches('.panel-input')) {
+                document.activeElement.blur();
+            }
             this._exitAllK2Modes();
         }
     }
@@ -102,6 +106,7 @@ export class K2FabricView {
         if (type === 'LF') {
             // No action on blur for LF, only on Apply/Exit
         } else if (this._getState().ui.activeEditMode === 'K2') {
+            // [FIX] 只有在 K2 (N&C) 模式下，blur 才觸發儲存
             this.stateService.dispatch(quoteActions.batchUpdatePropertyByType(type, field, value, this.indexesToExcludeFromBatchUpdate));
         }
         // SSet mode also only applies on exit/enter
@@ -120,14 +125,13 @@ export class K2FabricView {
                 nextInput.focus();
                 nextInput.select();
             } else {
-                // [FIX] Apply the final value before exiting
+                // [FIX] 修正 N&C 模式的 Enter 鍵邏輯
+                // 1. 手動觸發 blur 事件，這將呼叫 handlePanelInputBlur
+                //    並在 state 仍為 'K2' 時儲存最後一格的資料。
                 if (activeElement && activeElement.matches('.panel-input')) {
-                    this.handlePanelInputBlur({
-                        type: activeElement.dataset.type,
-                        field: activeElement.dataset.field,
-                        value: activeElement.value
-                    });
+                    activeElement.blur();
                 }
+                // 2. 正常退出模式。
                 this._exitAllK2Modes();
             }
         } else if (activeEditMode === 'K2_LF_SELECT') {
@@ -314,8 +318,10 @@ export class K2FabricView {
             if (modifiedIndexes.length > 0) {
                 this.stateService.dispatch(quoteActions.batchUpdatePropertiesForIndexes(modifiedIndexes, finalTypeMap));
                 
-                // [FIX] Dispatch a *second* action to remove the LF (pink) status from these modified rows
-                this.stateService.dispatch(quoteActions.removeLFModifiedRows(modifiedIndexes));
+                // [FIX] 移除多餘的 dispatch。
+                // `batchUpdatePropertiesForIndexes` 的 reducer 
+                // 已經會自動處理 `lfModifiedRowIndexes` 的清除。
+                // this.stateService.dispatch(quoteActions.removeLFModifiedRows(modifiedIndexes));
 
                 this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: `Fabric details applied to ${modifiedIndexes.length} items.` });
             } else {
