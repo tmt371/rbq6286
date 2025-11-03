@@ -126,10 +126,13 @@ export class K2FabricView {
                 nextInput.select();
             } else {
                 // [FIX] 修正 N&C 模式的 Enter 鍵邏輯
-                // 1. 手動觸發 blur 事件，這將呼叫 handlePanelInputBlur
-                //    並在 state 仍為 'K2' 時儲存最後一格的資料。
+                // 1. 同步地呼叫 handlePanelInputBlur (儲存最後一筆資料)
                 if (activeElement && activeElement.matches('.panel-input')) {
-                    activeElement.blur();
+                    this.handlePanelInputBlur({
+                        type: activeElement.dataset.type,
+                        field: activeElement.dataset.field,
+                        value: activeElement.value
+                    });
                 }
                 // 2. 正常退出模式。
                 this._exitAllK2Modes();
