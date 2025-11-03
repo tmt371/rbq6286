@@ -30,9 +30,11 @@ export class K2FabricView {
     }
 
     handleFocusModeRequest() {
+        console.log('[DEBUG] handleFocusModeRequest: Called.');
         const { ui } = this._getState();
         const currentMode = ui.activeEditMode;
         const newMode = currentMode === 'K2' ? null : 'K2';
+        console.log(`[DEBUG] handleFocusModeRequest: CurrentMode=${currentMode}, NewMode=${newMode}`);
 
         if (newMode) {
             const items = this._getItems();
@@ -44,6 +46,7 @@ export class K2FabricView {
             );
 
             if (hasConflict) {
+                console.log('[DEBUG] handleFocusModeRequest: Conflict detected. Showing dialog.');
                 this.eventAggregator.publish(EVENTS.SHOW_CONFIRMATION_DIALOG, {
                     message: 'Data Conflict: Some items (B2, B3, B4) already have Light-Filter settings. Continuing with a batch edit will overwrite this data. How would you like to proceed?',
                     closeOnOverlayClick: false,
@@ -52,6 +55,7 @@ export class K2FabricView {
                             { 
                                 type: 'button', text: 'Overwrite (L-Filter)', 
                                 callback: () => {
+                                    console.log('[DEBUG] handleFocusModeRequest: User chose Overwrite.');
                                     this.indexesToExcludeFromBatchUpdate.clear();
                                     this._enterFCMode(true);
                                 } 
@@ -59,20 +63,23 @@ export class K2FabricView {
                             { 
                                 type: 'button', text: 'Keep Existing (Skip L-Filter)', 
                                 callback: () => {
+                                    console.log('[DEBUG] handleFocusModeRequest: User chose Keep.');
                                     this.indexesToExcludeFromBatchUpdate = new Set(this._getState().quoteData.uiMetadata.lfModifiedRowIndexes);
                                     this._enterFCMode(false);
                                 }
                             },
-                            { type: 'button', text: 'Cancel', className: 'secondary', callback: () => {} }
+                            { type: 'button', text: 'Cancel', className: 'secondary', callback: () => { console.log('[DEBUG] handleFocusModeRequest: User chose Cancel.'); } }
                         ]
                     ]
                 });
             } else {
+                console.log('[DEBUG] handleFocusModeRequest: No conflict. Entering N&C mode.');
                 this._enterFCMode(false);
             }
         } else {
             // [FIX] 如果是從 N&C 模式退出，手動觸發 blur
             if (currentMode === 'K2' && document.activeElement.matches('.panel-input')) {
+                console.log('[DEBUG] handleFocusModeRequest: Exiting N&C mode. Manually blurring last element.');
                 document.activeElement.blur();
             }
             this._exitAllK2Modes();
@@ -80,6 +87,7 @@ export class K2FabricView {
     }
 
     _enterFCMode(isOverwriting) {
+        console.log(`[DEBUG] _enterFCMode: Entering N&C mode. Overwriting=${isOverwriting}`);
         if (isOverwriting) {
             const items = this._getItems();
             const { lfModifiedRowIndexes } = this._getState().quoteData.uiMetadata;
@@ -91,6 +99,7 @@ export class K2FabricView {
                 }
             });
             if (indexesToClear.length > 0) {
+                console.log('[DEBUG] _enterFCMode: Clearing LF modified rows:', indexesToClear);
                 this.stateService.dispatch(quoteActions.removeLFModifiedRows(indexesToClear));
             }
         }
@@ -103,18 +112,23 @@ export class K2FabricView {
     }
 
     handlePanelInputBlur({ type, field, value }) {
+        const currentMode = this._getState().ui.activeEditMode;
+        console.log(`[DEBUG] handlePanelInputBlur: Called. Field=${field}, Value=${value}, activeEditMode=${currentMode}`);
+        
         if (type === 'LF') {
-            // No action on blur for LF, only on Apply/Exit
-        } else if (this._getState().ui.activeEditMode === 'K2') {
-            // [FIX] 只有在 K2 (N&C) 模式下，blur 才觸發儲存
+            console.log('[DEBUG] handlePanelInputBlur: LF type, skipping blur save.');
+        } else if (currentMode === 'K2') {
+            console.log('[DEBUG] handlePanelInputBlur: K2 mode confirmed. DISPATCHING BATCH UPDATE.');
             this.stateService.dispatch(quoteActions.batchUpdatePropertyByType(type, field, value, this.indexesToExcludeFromBatchUpdate));
+        } else {
+            console.log(`[DEBUG] handlePanelInputBlur: Mode is ${currentMode}, not 'K2'. SKIPPING dispatch.`);
         }
-        // SSet mode also only applies on exit/enter
     }
 
     handlePanelInputEnter() {
         const { activeEditMode } = this._getState().ui;
         const activeElement = document.activeElement;
+        console.log(`[DEBUG] handlePanelInputEnter: Called. activeEditMode=${activeEditMode}`);
 
         if (activeEditMode === 'K2') {
             const inputs = Array.from(document.querySelectorAll('.panel-input:not([disabled])'));
@@ -122,9 +136,11 @@ export class K2FabricView {
             const nextInput = inputs[currentIndex + 1];
 
             if (nextInput) {
+                console.log('[DEBUG] handlePanelInputEnter (K2): Moving to next input.');
                 nextInput.focus();
                 nextInput.select();
             } else {
+                console.log('[DEBUG] handlePanelInputEnter (K2): LAST INPUT. Calling handlePanelInputBlur manually...');
                 // [FIX] 修正 N&C 模式的 Enter 鍵邏輯
                 // 1. 同步地呼叫 handlePanelInputBlur (儲存最後一筆資料)
                 if (activeElement && activeElement.matches('.panel-input')) {
@@ -135,29 +151,32 @@ export class K2FabricView {
                     });
                 }
                 // 2. 正常退出模式。
+                console.log('[DEBUG] handlePanelInputEnter (K2): Manual blur call complete. Calling _exitAllK2Modes...');
                 this._exitAllK2Modes();
+                console.log('[DEBUG] handlePanelInputEnter (K2): _exitAllK2Modes complete.');
             }
         } else if (activeEditMode === 'K2_LF_SELECT') {
-            // [FIX] Implement correct Enter key logic for LF mode
+            console.log('[DEBUG] handlePanelInputEnter (K2_LF_SELECT): LF mode detected.');
             const lfFnameInput = document.querySelector('input[data-type="LF"][data-field="fabric"]');
             const lfFcolorInput = document.querySelector('input[data-type="LF"][data-field="color"]');
 
             if (activeElement === lfFnameInput && lfFcolorInput) {
-                // User pressed Enter on F-Name, move to F-Color
+                console.log('[DEBUG] handlePanelInputEnter (K2_LF_SELECT): Moving from F-Name to F-Color.');
                 lfFcolorInput.focus();
                 lfFcolorInput.select();
             } else if (activeElement === lfFcolorInput) {
-                // User pressed Enter on F-Color (last input), apply changes and exit
+                console.log('[DEBUG] handlePanelInputEnter (K2_LF_SELECT): LAST INPUT. Applying changes and exiting.');
                 this._applyLFChanges();
                 this._exitAllK2Modes();
             }
         } else if (activeEditMode === 'K2_SSET_SELECT') {
+            console.log('[DEBUG] handlePanelInputEnter (K2_SSET_SELECT): SSet mode detected.');
             if (activeElement === this.lastSSetInput) {
-                // If user presses Enter on the last input, apply changes
+                console.log('[DEBUG] handlePanelInputEnter (K2_SSET_SELECT): LAST INPUT. Applying changes and exiting.');
                 this._applySSetChanges();
                 this._exitAllK2Modes();
             } else {
-                // Move to the next enabled input
+                console.log('[DEBUG] handlePanelInputEnter (K2_SSET_SELECT): Moving to next input.');
                 const inputs = Array.from(document.querySelectorAll('.panel-input:not([disabled])'));
                 const currentIndex = inputs.indexOf(activeElement);
                 const nextInput = inputs[currentIndex + 1];
@@ -172,7 +191,12 @@ export class K2FabricView {
     handleSequenceCellClick({ rowIndex }) {
         const { activeEditMode } = this._getState().ui;
         const item = this._getItems()[rowIndex];
-        if (!item || (item.width === null && item.height === null)) return; // Ignore empty rows
+        if (!item || (item.width === null && item.height === null)) {
+            console.log(`[DEBUG] handleSequenceCellClick: Ignoring click on empty row ${rowIndex}`);
+            return;
+        }
+
+        console.log(`[DEBUG] handleSequenceCellClick: Row ${rowIndex} clicked in mode ${activeEditMode}`);
 
         if (activeEditMode === 'K2_LF_SELECT') {
             const eligibleTypes = ['B2', 'B3', 'B4'];
@@ -200,6 +224,7 @@ export class K2FabricView {
 
     handleLFEditRequest() {
         const { activeEditMode } = this._getState().ui;
+        console.log(`[DEBUG] handleLFEditRequest: Called. activeEditMode=${activeEditMode}`);
         
         if (activeEditMode === 'K2_LF_SELECT') {
             this._applyLFChanges();
@@ -215,6 +240,7 @@ export class K2FabricView {
 
     handleLFDeleteRequest() {
         const { activeEditMode } = this._getState().ui;
+        console.log(`[DEBUG] handleLFDeleteRequest: Called. activeEditMode=${activeEditMode}`);
         
         if (activeEditMode === 'K2_LF_DELETE_SELECT') {
             const { lfSelectedRowIndexes } = this._getState().ui;
@@ -236,6 +262,7 @@ export class K2FabricView {
     // [NEW] Handler for the SSet button
     handleSSetRequest() {
         const { activeEditMode } = this._getState().ui;
+        console.log(`[DEBUG] handleSSetRequest: Called. activeEditMode=${activeEditMode}`);
 
         if (activeEditMode === 'K2_SSET_SELECT') {
             // If already in SSet mode, clicking again applies the changes
@@ -253,7 +280,9 @@ export class K2FabricView {
 
 
     _exitAllK2Modes() {
+        console.log('[DEBUG] _exitAllK2Modes: Called. Clearing all K2 states...');
         this.stateService.dispatch(uiActions.setActiveEditMode(null));
+        console.log('[DEBUG] _exitAllK2Modes: DISPATCHED setActiveEditMode(null).');
         this.stateService.dispatch(uiActions.clearMultiSelectSelection());
         this.stateService.dispatch(uiActions.clearLFSelection());
         this.stateService.dispatch(uiActions.clearSSetSelection()); // [NEW] Clear SSet selection
@@ -262,10 +291,12 @@ export class K2FabricView {
         this.lastSSetInput = null; // [NEW] Clear last input tracker
 
         this._updatePanelInputsState();
+        console.log('[DEBUG] _exitAllK2Modes: Finished.');
     }
 
     _applyLFChanges() {
         const { lfSelectedRowIndexes } = this._getState().ui;
+        console.log(`[DEBUG] _applyLFChanges: Called with ${lfSelectedRowIndexes.length} selected items.`);
         if (lfSelectedRowIndexes.length === 0) return;
 
         const fNameInput = document.querySelector('input[data-type="LF"][data-field="fabric"]');
@@ -273,6 +304,7 @@ export class K2FabricView {
         
         if (fNameInput && fColorInput && fNameInput.value && fColorInput.value) {
             const fabricNameWithPrefix = `Light-filter ${fNameInput.value}`;
+            console.log(`[DEBUG] _applyLFChanges: Applying LF changes: ${fabricNameWithPrefix}, ${fColorInput.value}`);
             this.stateService.dispatch(quoteActions.batchUpdateLFProperties(lfSelectedRowIndexes, fabricNameWithPrefix, fColorInput.value));
             this.stateService.dispatch(quoteActions.addLFModifiedRows(lfSelectedRowIndexes));
         }
@@ -281,6 +313,7 @@ export class K2FabricView {
     // [NEW] Logic to apply SSet changes
     _applySSetChanges() {
         const { sSetSelectedRowIndexes } = this._getState().ui;
+        console.log(`[DEBUG] _applySSetChanges: Called with ${sSetSelectedRowIndexes.length} selected items.`);
         if (sSetSelectedRowIndexes.length === 0) {
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'No items were selected.' });
             return;
@@ -299,6 +332,7 @@ export class K2FabricView {
                 typeMap[type][field] = input.value;
             }
         });
+        console.log('[DEBUG] _applySSetChanges: Generated typeMap from inputs:', typeMap);
 
         // Filter map to only include entries where both fabric and color are set
         const finalTypeMap = {};
@@ -317,6 +351,7 @@ export class K2FabricView {
                 const itemType = items[index]?.fabricType;
                 return itemType && finalTypeMap[itemType];
             });
+            console.log(`[DEBUG] _applySSetChanges: Final 'modifiedIndexes' to be dispatched:`, modifiedIndexes);
 
             if (modifiedIndexes.length > 0) {
                 this.stateService.dispatch(quoteActions.batchUpdatePropertiesForIndexes(modifiedIndexes, finalTypeMap));
