@@ -7499,6 +7499,8 @@ export class AppController {
         this.eventAggregator.subscribe(EVENTS.LOCATION_INPUT_ENTER_PRESSED, (data) => delegate('handleLocationInputEnter', data));
         this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_LF_EDIT_MODE, () => delegate('handleLFEditRequest'));
         this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_LF_DELETE_MODE, () => delegate('handleLFDeleteRequest'));
+        // [NEW] Subscribe to SSet event
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_SSET_MODE, () => delegate('handleSSetRequest'));
         this.eventAggregator.subscribe(EVENTS.USER_TOGGLED_K3_EDIT_MODE, () => delegate('handleToggleK3EditMode')); 
         this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_BATCH_CYCLE, (data) => delegate('handleBatchCycle', data));
 
@@ -7930,6 +7932,13 @@ export const removeLFProperties = (rowIndexes) => ({
     payload: { rowIndexes },
 });
 
+// [NEW] Action for SSet feature
+export const batchUpdatePropertiesForIndexes = (selectedIndexes, typeMap) => ({
+    type: QUOTE_ACTION_TYPES.BATCH_UPDATE_PROPERTIES_FOR_INDEXES,
+    payload: { selectedIndexes, typeMap },
+});
+
+
 // --- Summary & Metadata ---
 export const updateAccessorySummary = (data) => ({
     type: QUOTE_ACTION_TYPES.UPDATE_ACCESSORY_SUMMARY,
@@ -8039,6 +8048,17 @@ export const clearLFSelection = () => ({
 
     type: UI_ACTION_TYPES.CLEAR_LF_SELECTION,
 });
+
+// [NEW] K2 (SSet) State
+export const toggleSSetSelection = (rowIndex) => ({
+    type: UI_ACTION_TYPES.TOGGLE_SSET_SELECTION,
+    payload: { rowIndex },
+});
+
+export const clearSSetSelection = () => ({
+    type: UI_ACTION_TYPES.CLEAR_SSET_SELECTION,
+});
+
 
 // --- K4 & K5 State ---
 export const setDualChainMode = (mode) => ({
@@ -8185,8 +8205,11 @@ export const UI_ACTION_TYPES = {
 
     // K2 (Fabric/LF) State
     TOGGLE_LF_SELECTION: 'ui/toggleLFSelection',
-
     CLEAR_LF_SELECTION: 'ui/clearLFSelection',
+
+    // [NEW] K2 (SSet) State
+    TOGGLE_SSET_SELECTION: 'ui/toggleSSetSelection',
+    CLEAR_SSET_SELECTION: 'ui/clearSSetSelection',
 
     // K4 (Drive/Accessories) & K5 (Dual/Chain) State
     SET_DUAL_CHAIN_MODE: 'ui/setDualChainMode',
@@ -8223,40 +8246,41 @@ export const UI_ACTION_TYPES = {
     RESTORE_F1_SNAPSHOT: 'ui/restoreF1Snapshot',
 };
 
-export
-    const QUOTE_ACTION_TYPES = {
-        // Quote Data Root
-        SET_QUOTE_DATA: 'quote/setQuoteData',
-        RESET_QUOTE_DATA: 'quote/resetQuoteData',
+export const QUOTE_ACTION_TYPES = {
+    // Quote Data Root
+    SET_QUOTE_DATA: 'quote/setQuoteData',
+    RESET_QUOTE_DATA: 'quote/resetQuoteData',
 
-        // Item Array Operations
-        INSERT_ROW: 'quote/insertRow',
-        DELETE_ROW: 'quote/deleteRow',
-        CLEAR_ROW: 'quote/clearRow',
-        DELETE_MULTIPLE_ROWS: 'quote/deleteMultipleRows',
+    // Item Array Operations
+    INSERT_ROW: 'quote/insertRow',
+    DELETE_ROW: 'quote/deleteRow',
+    CLEAR_ROW: 'quote/clearRow',
+    DELETE_MULTIPLE_ROWS: 'quote/deleteMultipleRows',
 
-        // Individual Item Properties
-        UPDATE_ITEM_VALUE: 'quote/updateItemValue',
-        UPDATE_ITEM_PROPERTY: 'quote/updateItemProperty',
-        UPDATE_WINDER_MOTOR_PROPERTY: 'quote/updateWinderMotorProperty',
-        CYCLE_K3_PROPERTY: 'quote/cycleK3Property',
-        CYCLE_ITEM_TYPE:
-            'quote/cycleItemType',
-        SET_ITEM_TYPE: 'quote/setItemType',
+    // Individual Item Properties
+    UPDATE_ITEM_VALUE: 'quote/updateItemValue',
+    UPDATE_ITEM_PROPERTY: 'quote/updateItemProperty',
+    UPDATE_WINDER_MOTOR_PROPERTY: 'quote/updateWinderMotorProperty',
+    CYCLE_K3_PROPERTY: 'quote/cycleK3Property',
+    CYCLE_ITEM_TYPE:
+        'quote/cycleItemType',
+    SET_ITEM_TYPE: 'quote/setItemType',
 
-        // Batch Item Updates
-        BATCH_UPDATE_PROPERTY: 'quote/batchUpdateProperty',
-        BATCH_UPDATE_PROPERTY_BY_TYPE: 'quote/batchUpdatePropertyByType',
-        BATCH_UPDATE_FABRIC_TYPE: 'quote/batchUpdateFabricType',
-        BATCH_UPDATE_FABRIC_TYPE_FOR_SELECTION: 'quote/batchUpdateFabricTypeForSelection',
-        BATCH_UPDATE_LF_PROPERTIES: 'quote/batchUpdateLFProperties',
-        REMOVE_LF_PROPERTIES: 'quote/removeLFProperties',
+    // Batch Item Updates
+    BATCH_UPDATE_PROPERTY: 'quote/batchUpdateProperty',
+    BATCH_UPDATE_PROPERTY_BY_TYPE: 'quote/batchUpdatePropertyByType',
+    BATCH_UPDATE_FABRIC_TYPE: 'quote/batchUpdateFabricType',
+    BATCH_UPDATE_FABRIC_TYPE_FOR_SELECTION: 'quote/batchUpdateFabricTypeForSelection',
+    BATCH_UPDATE_LF_PROPERTIES: 'quote/batchUpdateLFProperties',
+    REMOVE_LF_PROPERTIES: 'quote/removeLFProperties',
+    // [NEW] Action for SSet feature
+    BATCH_UPDATE_PROPERTIES_FOR_INDEXES: 'quote/batchUpdatePropertiesForIndexes',
 
-        // Summary & Metadata
-        UPDATE_ACCESSORY_SUMMARY: 'quote/updateAccessorySummary',
-        ADD_LF_MODIFIED_ROWS: 'quote/addLFModifiedRows',
-        REMOVE_LF_MODIFIED_ROWS: 'quote/removeLFModifiedRows',
-    };
+    // Summary & Metadata
+    UPDATE_ACCESSORY_SUMMARY: 'quote/updateAccessorySummary',
+    ADD_LF_MODIFIED_ROWS: 'quote/addLFModifiedRows',
+    REMOVE_LF_MODIFIED_ROWS: 'quote/removeLFModifiedRows',
+};
 --- FILE END ---
 
 --- FILE START: 04-core-code/config/constants.js ---
@@ -8305,6 +8329,8 @@ export const EVENTS = {
     LOCATION_INPUT_ENTER_PRESSED: 'locationInputEnterPressed',
     USER_REQUESTED_LF_EDIT_MODE: 'userRequestedLFEditMode',
     USER_REQUESTED_LF_DELETE_MODE: 'userRequestedLFDeleteMode',
+    // [NEW] Event for SSet mode
+    USER_REQUESTED_SSET_MODE: 'userRequestedSSetMode',
     USER_TOGGLED_K3_EDIT_MODE: 'userToggledK3EditMode',
     USER_REQUESTED_BATCH_CYCLE: 'userRequestedBatchCycle',
     DUAL_CHAIN_MODE_CHANGED: 'dualChainModeChanged',
@@ -8459,6 +8485,8 @@ export const initialState = {
 
         // --- K2 (Fabric/LF) State ---
         lfSelectedRowIndexes: [],
+        // [NEW] Add state for SSet selection, independent of lfSelectedRowIndexes
+        sSetSelectedRowIndexes: [],
 
         // [REMOVED] lfModifiedRowIndexes is moved to quoteData.uiMetadata for persistence.
 
@@ -8527,7 +8555,8 @@ export const initialState = {
 
                         width: null, height: null, fabricType: null, linePrice: null,
                         location: '', fabric: '', color: '', over: '',
-                        oi: '', lr: '', dual: '', chain: null, winder: '',
+                        oi: '', lr: '', dual: '', chain: null,
+                        winder: '',
                         motor: ''
                     }
                 ],
@@ -8761,6 +8790,7 @@ export function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
 
+        
         case QUOTE_ACTION_TYPES.CYCLE_K3_PROPERTY: {
             items = [...productData.items];
             const { rowIndex, column } = action.payload;
@@ -8874,6 +8904,49 @@ export function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
 
+        // [FIX] SSet Feature: Also clear lfModifiedRowIndexes when overwriting
+        case QUOTE_ACTION_TYPES.BATCH_UPDATE_PROPERTIES_FOR_INDEXES: {
+            const { selectedIndexes, typeMap } = action.payload;
+            const selectedIndexesSet = new Set(selectedIndexes);
+            
+            // [NEW] Keep track of which indexes were actually modified
+            const modifiedIndexesSet = new Set();
+
+            items = productData.items.map((item, index) => {
+                // Check if this item is one of the selected ones
+                if (selectedIndexesSet.has(index)) {
+                    const itemType = item.fabricType;
+                    // Check if the typeMap has new data for this item's type
+                    const newProps = typeMap[itemType];
+                    
+                    if (newProps && (newProps.fabric !== undefined || newProps.color !== undefined)) {
+                        // [NEW] This index is being modified
+                        modifiedIndexesSet.add(index);
+                        return {
+                            ...item,
+                            fabric: newProps.fabric,
+                            color: newProps.color,
+                        };
+                    }
+                }
+                // Return original item if not selected or no matching type in map
+                return item;
+            });
+            
+            // [FIX] If SSet modified any indexes, we must remove them from lfModifiedRowIndexes
+            const newLfModifiedIndexes = state.uiMetadata.lfModifiedRowIndexes.filter(
+                index => !modifiedIndexesSet.has(index)
+            );
+            
+            const newUiMetadata = {
+                ...state.uiMetadata,
+                lfModifiedRowIndexes: newLfModifiedIndexes
+            };
+
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData }, uiMetadata: newUiMetadata };
+        }
+
         case QUOTE_ACTION_TYPES.ADD_LF_MODIFIED_ROWS: {
             const modifiedIndexes = new Set([...state.uiMetadata.lfModifiedRowIndexes, ...action.payload.rowIndexes]);
             return { ...state, uiMetadata: { ...state.uiMetadata, lfModifiedRowIndexes: Array.from(modifiedIndexes) } };
@@ -8943,6 +9016,7 @@ import { initialState } from '../config/initial-state.js';
 
 export function uiReducer(state, action) {
     switch (action.type) {
+        
         case UI_ACTION_TYPES.SET_CURRENT_VIEW:
             return { ...state, currentView: action.payload.viewName };
         case UI_ACTION_TYPES.SET_VISIBLE_COLUMNS:
@@ -8992,6 +9066,21 @@ export function uiReducer(state, action) {
         }
         case UI_ACTION_TYPES.CLEAR_LF_SELECTION:
             return { ...state, lfSelectedRowIndexes: [] };
+
+        // [NEW] K2 (SSet) State Reducers
+        case UI_ACTION_TYPES.TOGGLE_SSET_SELECTION: {
+            const selectedIndexes = new Set(state.sSetSelectedRowIndexes);
+            if (selectedIndexes.has(action.payload.rowIndex)) {
+                selectedIndexes.delete(action.payload.rowIndex);
+            } else {
+                selectedIndexes.add(action.payload.rowIndex);
+            }
+            return { ...state, sSetSelectedRowIndexes: Array.from(selectedIndexes) };
+        }
+        case UI_ACTION_TYPES.CLEAR_SSET_SELECTION:
+            return { ...state, sSetSelectedRowIndexes: [] };
+
+
         case UI_ACTION_TYPES.SET_DUAL_CHAIN_MODE:
             return { ...state, dualChainMode: action.payload.mode };
         case UI_ACTION_TYPES.SET_DRIVE_ACCESSORY_MODE:
@@ -9685,7 +9774,7 @@ import { initialState } from '../config/initial-state.js';
  */
 export class FileService {
     constructor({ productFactory }) {
-        this.productFactory = productFactory; 
+        this.productFactory = productFactory;
         console.log("FileService Initialized.");
     }
 
@@ -9701,24 +9790,40 @@ export class FileService {
         URL.revokeObjectURL(url);
     }
 
-    _generateFileName(extension) {
+    _generateFileName(quoteData, extension) {
         const now = new Date();
         const yyyy = now.getFullYear();
         const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0'); 
+        const dd = String(now.getDate()).padStart(2, '0');
         const hh = String(now.getHours()).padStart(2, '0');
         const min = String(now.getMinutes()).padStart(2, '0');
-        return `quote-${yyyy}${mm}${dd}${hh}${min}.${extension}`;
+        const timestamp = `${yyyy}${mm}${dd}${hh}${min}`;
+
+        // [MODIFIED] ÂØ¶‰??∞Á?Ê™îÂ??¢Á??èËºØ
+        const customerName = quoteData?.customer?.name || 'customer';
+        const customerPhone = quoteData?.customer?.phone || '';
+
+        // Á∞°Ê??ÑÊ??çÊ??ÜÔ?ÁßªÈô§‰∏çÂ??®Á?Â≠óÂ?‰∏¶Êõø?õÁ©∫??        const safeName = customerName.replace(/[\s/\\?%*:|"<>]/g, '_') || 'customer';
+        const safePhone = customerPhone.replace(/[\s/\\?%*:|"<>]/g, '_');
+
+        let parts = ['quote', safeName];
+        if (safePhone) {
+            parts.push(safePhone);
+        }
+        parts.push(timestamp);
+
+        return `${parts.join('-')}.${extension}`;
     }
 
     saveToJson(quoteData) {
         try {
             const jsonString = JSON.stringify(quoteData, null, 2);
-            const fileName = this._generateFileName('json');
+            // [MODIFIED] ?≥È? quoteData ‰ª•Áî¢?üÊñ∞Ê™îÂ?
+            const fileName = this._generateFileName(quoteData, 'json');
             this._triggerDownload(jsonString, fileName, 'application/json');
             return { success: true, message: 'Quote file is being downloaded...' };
         } catch (error) {
-            console.error("Failed to save JSON file:", error); 
+            console.error("Failed to save JSON file:", error);
             return { success: false, message: 'Error creating quote file.' };
         }
     }
@@ -9726,11 +9831,12 @@ export class FileService {
     exportToCsv(quoteData) {
         try {
             const csvString = dataToCsv(quoteData);
-            const fileName = this._generateFileName('csv');
+            // [MODIFIED] ?≥È? quoteData ‰ª•Áî¢?üÊñ∞Ê™îÂ?
+            const fileName = this._generateFileName(quoteData, 'csv');
             this._triggerDownload(csvString, fileName, 'text/csv;charset=utf-8;');
             return { success: true, message: 'CSV file is being downloaded...' };
         } catch (error) {
-            console.error("Failed to export CSV file:", error); 
+            console.error("Failed to export CSV file:", error);
             return { success: false, message: 'Error creating CSV file.' };
         }
     }
@@ -9741,7 +9847,7 @@ export class FileService {
 
             if (fileName.toLowerCase().endsWith('.json')) {
                 loadedData = JSON.parse(content);
-            } else if (fileName.toLowerCase().endsWith('.csv')) { 
+            } else if (fileName.toLowerCase().endsWith('.csv')) {
                 const parsedResult = csvToData(content);
                 if (parsedResult === null) {
                     throw new Error("CSV parser returned null.");
@@ -9751,13 +9857,13 @@ export class FileService {
                 const { items, lfIndexes, f1Snapshot, f3Data } = parsedResult;
 
                 const productStrategy = this.productFactory.getProductStrategy('rollerBlind');
-                const newItem = productStrategy.getInitialItemData(); 
+                const newItem = productStrategy.getInitialItemData();
                 items.push(newItem);
 
                 const newQuoteData = JSON.parse(JSON.stringify(initialState.quoteData));
                 newQuoteData.products.rollerBlind.items = items;
                 newQuoteData.uiMetadata.lfModifiedRowIndexes = lfIndexes;
-                
+
                 // [MODIFIED v6285 Phase 5] Assign the parsed f1Snapshot and f3Data
                 if (f1Snapshot) {
                     Object.assign(newQuoteData.f1Snapshot, f1Snapshot);
@@ -9765,25 +9871,25 @@ export class FileService {
                 if (f3Data) {
                     Object.assign(newQuoteData, f3Data); // Assign f3Data (quoteId, issueDate, customer...)
                 }
-                
+
                 loadedData = newQuoteData;
-                
+
             } else {
                 return { success: false, message: `Unsupported file type: ${fileName}` };
             }
 
             if (loadedData && !loadedData.uiMetadata) {
                 loadedData.uiMetadata = {
-                    lfModifiedRowIndexes: [] 
+                    lfModifiedRowIndexes: []
                 };
             }
-            
+
             // [MODIFIED v6285 Phase 5] Also ensure f1Snapshot exists on loaded JSON data
             if (loadedData && !loadedData.f1Snapshot) {
                 console.warn("Patching loaded JSON file with missing f1Snapshot.");
                 loadedData.f1Snapshot = JSON.parse(JSON.stringify(initialState.quoteData.f1Snapshot));
             }
-            
+
             // [NEW v6285 Phase 5] Ensure customer object exists on loaded JSON data
             if (loadedData && !loadedData.customer) {
                 console.warn("Patching loaded JSON file with missing customer object.");
@@ -9794,12 +9900,12 @@ export class FileService {
             const productData = loadedData?.products?.[currentProduct];
 
             if (productData && Array.isArray(productData.items)) {
-                return { success: true, data: loadedData, message: `Successfully loaded data from ${fileName}` }; 
+                return { success: true, data: loadedData, message: `Successfully loaded data from ${fileName}` };
             } else {
                 if (loadedData && loadedData.rollerBlindItems && Array.isArray(loadedData.rollerBlindItems)) {
-                     return { success: true, data: loadedData, message: `Successfully loaded legacy data from ${fileName}` };
+                    return { success: true, data: loadedData, message: `Successfully loaded legacy data from ${fileName}` };
                 }
-                throw new Error("File content is not in a valid quote format."); 
+                throw new Error("File content is not in a valid quote format.");
             }
         } catch (error) {
             console.error("Failed to parse file content:", error);
@@ -11404,6 +11510,8 @@ export class LeftPanelComponent {
         this.fabricColorButton = document.getElementById('btn-focus-fabric');
         this.lfButton = document.getElementById('btn-light-filter');
         this.lfDelButton = document.getElementById('btn-lf-del');
+        // [NEW] Cache the SSet button
+        this.k2SSetButton = document.getElementById('btn-k2-sset');
         this.k3EditButton = document.getElementById('btn-k3-edit');
         this.k3OverButton = document.getElementById('btn-batch-cycle-over');
         this.k3OiButton = document.getElementById('btn-batch-cycle-oi');
@@ -11511,24 +11619,33 @@ export class LeftPanelComponent {
             }
         }
         
-        // --- K2 Button Active/Disabled States ---
+        // [MODIFIED] Implement strict mutual exclusion for K2 buttons
         const isFCMode = activeEditMode === 'K2';
         const isLFSelectMode = activeEditMode === 'K2_LF_SELECT';
         const isLFDeleteMode = activeEditMode === 'K2_LF_DELETE_SELECT';
-        const isAnyK2ModeActive = isFCMode || isLFSelectMode || isLFDeleteMode;
+        const isSSetMode = activeEditMode === 'K2_SSET_SELECT';
+        const isAnyK2ModeActive = isFCMode || isLFSelectMode || isLFDeleteMode || isSSetMode;
 
         if (this.locationButton) this.locationButton.classList.toggle('active', activeEditMode === 'K1');
-        if (this.fabricColorButton) this.fabricColorButton.classList.toggle('active', isFCMode);
-        if (this.lfButton) this.lfButton.classList.toggle('active', isLFSelectMode);
-        if (this.lfDelButton) this.lfDelButton.classList.toggle('active', isLFDeleteMode);
         
-        // [CORRECTED] Changed check from .size > 0 to .length > 0 for arrays.
-        const hasLFModified = lfModifiedRowIndexes.length > 0;
-
-        if (this.locationButton) this.locationButton.disabled = isAnyK2ModeActive;
-        if (this.fabricColorButton) this.fabricColorButton.disabled = activeEditMode !== null && !isFCMode;
-        if (this.lfButton) this.lfButton.disabled = activeEditMode !== null && !isLFSelectMode;
-        if (this.lfDelButton) this.lfDelButton.disabled = (activeEditMode !== null && !isLFDeleteMode) || !hasLFModified;
+        if (this.fabricColorButton) {
+            this.fabricColorButton.classList.toggle('active', isFCMode);
+            this.fabricColorButton.disabled = isAnyK2ModeActive && !isFCMode;
+        }
+        if (this.lfButton) {
+            this.lfButton.classList.toggle('active', isLFSelectMode);
+            this.lfButton.disabled = isAnyK2ModeActive && !isLFSelectMode;
+        }
+        if (this.lfDelButton) {
+            const hasLFModified = lfModifiedRowIndexes.length > 0;
+            this.lfDelButton.classList.toggle('active', isLFDeleteMode);
+            // Button is disabled if ANY K2 mode is active (and it's not this one), OR if no LF-modified rows exist
+            this.lfDelButton.disabled = (isAnyK2ModeActive && !isLFDeleteMode) || !hasLFModified;
+        }
+        if (this.k2SSetButton) {
+            this.k2SSetButton.classList.toggle('active', isSSetMode);
+            this.k2SSetButton.disabled = isAnyK2ModeActive && !isSSetMode;
+        }
 
         // --- K3 Button Active/Disabled States ---
         const isK3EditMode = activeEditMode === 'K3';
@@ -11699,6 +11816,15 @@ export class LeftPanelInputHandler {
                 this.eventAggregator.publish(EVENTS.USER_REQUESTED_LF_DELETE_MODE);
             });
         }
+
+        // [NEW] Add listener for SSet button
+        const sSetButton = document.getElementById('btn-k2-sset');
+        if (sSetButton) {
+            sSetButton.addEventListener('click', () => {
+                this.eventAggregator.publish(EVENTS.USER_REQUESTED_SSET_MODE);
+            });
+        }
+
 
         const batchTable = document.getElementById(DOM_IDS.FABRIC_BATCH_TABLE);
         if (batchTable) {
@@ -12162,7 +12288,8 @@ export class TableComponent {
         return {
             sequence: (cell, item, index, state) => {
                 // [MODIFIED] Removed obsolete state flags 'selectedRowIndex' and 'isMultiSelectMode'
-                const { multiSelectSelectedIndexes, lfSelectedRowIndexes } = state.ui;
+                // [MODIFIED] Added sSetSelectedRowIndexes
+                const { multiSelectSelectedIndexes, lfSelectedRowIndexes, sSetSelectedRowIndexes } = state.ui;
                 const currentProductKey = state.quoteData.currentProduct;
                 const items = state.quoteData.products[currentProductKey].items;
 
@@ -12172,6 +12299,9 @@ export class TableComponent {
                 // [MODIFIED] Simplified highlighting logic to rely only on multiSelectSelectedIndexes
                 if (lfSelectedRowIndexes.includes(index)) {
                     cell.classList.add('lf-selection-highlight');
+                } else if (sSetSelectedRowIndexes.includes(index)) {
+                    // [NEW] Add highlighting for SSet mode
+                    cell.classList.add('sset-selection-highlight');
                 } else if (isLastRowEmpty) {
                     cell.classList.add('selection-disabled');
                 } else if (multiSelectSelectedIndexes.includes(index)) {
@@ -13058,6 +13188,12 @@ export class UIManager {
     background-color: var(--highlight-color);
     font-weight: bold;
 }
+
+/* [NEW] Highlighting for SSet mode selection */
+.results-table td.sset-selection-highlight {
+    background-color: #fffacd; /* Light yellow, same as LF mode */
+}
+
 
 .results-table td.multi-selected-row {
     background-color: #f8d7da;
@@ -14138,10 +14274,10 @@ margin: 0;
         <div id="k1-content" class="tab-content active">
             <div class="feature-grid">
                 <div class="feature-group">
-                    <div class="feature-buttons">
+                     <div class="feature-buttons">
                         <button id="btn-focus-location" class="feature-button">#Location</button>
                         <input type="text" id="location-input-box" class="panel-input" placeholder="Location..." disabled>
-                    </div>
+                     </div>
                 </div>
             </div>
         </div>
@@ -14149,179 +14285,180 @@ margin: 0;
             <div class="feature-grid">
                 <div class="feature-group">
                     <div class="feature-buttons">
-                        <button id="btn-focus-fabric" class="feature-button">#Fabric & Color</button>
+                        <button id="btn-focus-fabric" class="feature-button">N&C</button>
                         <button id="btn-light-filter" class="feature-button">Light-Filter</button>
                         <button id="btn-lf-del" class="feature-button">LF-Del</button>
+                        <button id="btn-k2-sset" class="feature-button">SSet</button>
                     </div>
                 </div>
                 <div class="feature-group">
-                    <table class="panel-input-table" id="fabric-batch-table">
+                     <table class="panel-input-table" id="fabric-batch-table">
                         <thead>
                             <tr>
-                                <th>Type</th>
+                                 <th>Type</th>
                                 <th>F-Name</th>
                                 <th>F-Color</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
+                             <tr>
                                 <td>B1</td>
-                                <td><input type="text" data-type="B1" data-field="fabric" class="panel-input"></td>
+                                 <td><input type="text" data-type="B1" data-field="fabric" class="panel-input"></td>
                                 <td><input type="text" data-type="B1" data-field="color" class="panel-input"></td>
                             </tr>
-                            <tr>
+                             <tr>
                                 <td>B2</td>
                                 <td><input type="text" data-type="B2" data-field="fabric" class="panel-input"></td>
                                 <td><input type="text" data-type="B2" data-field="color" class="panel-input"></td>
                             </tr>
-                            <tr>
+                             <tr>
                                 <td>B3</td>
                                 <td><input type="text" data-type="B3" data-field="fabric" class="panel-input"></td>
-                                <td><input type="text" data-type="B3" data-field="color" class="panel-input"></td>
+                                 <td><input type="text" data-type="B3" data-field="color" class="panel-input"></td>
                             </tr>
-                            <tr>
+                             <tr>
                                 <td>B4</td>
                                 <td><input type="text" data-type="B4" data-field="fabric" class="panel-input"></td>
-                                <td><input type="text" data-type="B4" data-field="color" class="panel-input"></td>
+                                 <td><input type="text" data-type="B4" data-field="color" class="panel-input"></td>
                             </tr>
-                            <tr>
+                             <tr>
                                 <td>B5</td>
                                 <td><input type="text" data-type="B5" data-field="fabric" class="panel-input"></td>
-                                <td><input type="text" data-type="B5" data-field="color" class="panel-input"></td>
+                                 <td><input type="text" data-type="B5" data-field="color" class="panel-input"></td>
                             </tr>
                             <tr>
-                                <td>SN</td>
+                                 <td>SN</td>
                                 <td><input type="text" data-type="SN" data-field="fabric" class="panel-input"></td>
-                                <td><input type="text" data-type="SN" data-field="color" class="panel-input"></td>
+                                 <td><input type="text" data-type="SN" data-field="color" class="panel-input"></td>
                             </tr>
                             <tr>
-                                <td>LF</td>
+                                 <td>LF</td>
                                 <td><input type="text" data-type="LF" data-field="fabric" class="panel-input" disabled></td>
-                                <td><input type="text" data-type="LF" data-field="color" class="panel-input" disabled></td>
+                                 <td><input type="text" data-type="LF" data-field="color" class="panel-input" disabled></td>
                             </tr>
                         </tbody>
-                    </table>
+                     </table>
                 </div>
             </div>
         </div>
         <div id="k3-content" class="tab-content">
             <div class="feature-grid">
-                <div class="feature-group">
+                 <div class="feature-group">
                     <div class="feature-buttons">
                         <button id="btn-k3-edit" class="feature-button">Edit</button>
                     </div>
-                </div>
+                 </div>
                 <div class="feature-group">
                     <div class="feature-buttons">
                         <button id="btn-batch-cycle-over" class="feature-button">Over</button>
-                        <button id="btn-batch-cycle-oi" class="feature-button">O/I</button>
+                         <button id="btn-batch-cycle-oi" class="feature-button">O/I</button>
                         <button id="btn-batch-cycle-lr" class="feature-button">L/R</button>
                     </div>
                 </div>
-            </div>
+             </div>
         </div>
         <div id="k4-content" class="tab-content">
             <div class="feature-grid k5-grid">
                 <div class="feature-group">
                     <div class="feature-buttons">
-                        <button id="btn-k5-winder" class="feature-button">Winder</button>
+                         <button id="btn-k5-winder" class="feature-button">Winder</button>
                         <button id="btn-k5-motor" class="feature-button">Motor</button>
                         <button id="btn-k5-remote" class="feature-button">Remote</button>
-                        <button id="btn-k5-charger" class="feature-button">Charger</button>
+                         <button id="btn-k5-charger" class="feature-button">Charger</button>
                         <button id="btn-k5-3m-cord" class="feature-button">3MCord</button>
                     </div>
                 </div>
-                <div class="feature-group k5-display-row">
+                 <div class="feature-group k5-display-row">
                     <input type="text" id="k5-display-winder" class="panel-input k5-display-box" placeholder="HD Total..." readonly>
                     <input type="text" id="k5-display-motor" class="panel-input k5-display-box" placeholder="Motor Total..." readonly>
-                    <input type="text" id="k5-display-remote" class="panel-input k5-display-box" placeholder="Remote Total..." readonly>
+                     <input type="text" id="k5-display-remote" class="panel-input k5-display-box" placeholder="Remote Total..." readonly>
                     <input type="text" id="k5-display-charger" class="panel-input k5-display-box" placeholder="Charger Total..." readonly>
                     <input type="text" id="k5-display-cord" class="panel-input k5-display-box" placeholder="Cord Total..." readonly>
                 </div>
-                <div class="feature-group k5-combined-row">
+                 <div class="feature-group k5-combined-row">
                     <span class="k5-total-label">Total</span>
                     <input type="text" id="k5-display-total" class="panel-input k5-total-display" readonly>
-                    <div class="k5-counter-group" id="k5-counter-remote">
+                     <div class="k5-counter-group" id="k5-counter-remote">
                         <button id="btn-k5-remote-add" class="k5-counter-btn" disabled>+</button>
                         <input type="text" id="k5-display-remote-count" class="panel-input k5-counter-display" value="0" readonly>
-                        <button id="btn-k5-remote-subtract" class="k5-counter-btn" disabled>-</button>
+                         <button id="btn-k5-remote-subtract" class="k5-counter-btn" disabled>-</button>
                     </div>
                     <div class="k5-counter-group" id="k5-counter-charger">
                         <button id="btn-k5-charger-add" class="k5-counter-btn" disabled>+</button>
-                        <input type="text" id="k5-display-charger-count" class="panel-input k5-counter-display" value="0" readonly>
+                         <input type="text" id="k5-display-charger-count" class="panel-input k5-counter-display" value="0" readonly>
                         <button id="btn-k5-charger-subtract" class="k5-counter-btn" disabled>-</button>
                     </div>
-                    <div class="k5-counter-group" id="k5-counter-cord">
+                     <div class="k5-counter-group" id="k5-counter-cord">
                         <button id="btn-k5-cord-add" class="k5-counter-btn" disabled>+</button>
                         <input type="text" id="k5-display-cord-count" class="panel-input k5-counter-display" value="0" readonly>
-                        <button id="btn-k5-cord-subtract" class="k5-counter-btn" disabled>-</button>
+                         <button id="btn-k5-cord-subtract" class="k5-counter-btn" disabled>-</button>
                     </div>
                 </div>
             </div>
         </div>
         <div id="k5-content" class="tab-content">
-            <div class="k5-grid-layout">
+             <div class="k5-grid-layout">
                 <div class="k5-grid-row">
                     <div class="k5-grid-group">
                         <div class="k5-grid-cell-a">
-                            <button id="btn-k4-dual" class="feature-button">Dual</button>
+                             <button id="btn-k4-dual" class="feature-button">Dual</button>
                         </div>
                         <div class="k5-grid-cell-b">
-                            <div id="k4-dual-price-display" class="k4-price-box">
+                             <div id="k4-dual-price-display" class="k4-price-box">
                                 <span class="price-value"></span>
                             </div>
-                        </div>
+                         </div>
                     </div>
                     <div class="k5-grid-group">
-                        <div class="k5-grid-cell-c">
+                         <div class="k5-grid-cell-c">
                             <button id="btn-k4-chain" class="feature-button">Chain</button>
                         </div>
                         <div class="k5-grid-cell-d">
                             <input type="text" id="k4-input-display" class="panel-input k4-display-box" placeholder="Chain length..." disabled>
                         </div>
                     </div>
-                </div>
+                 </div>
                 <div class="k5-grid-row">
                     <div class="k5-grid-group">
                         <div class="k5-grid-cell-label">Winder</div>
-                        <div class="k5-grid-cell-display">
+                         <div class="k5-grid-cell-display">
                             <input type="text" id="k5-display-winder-summary" class="panel-input k5-summary-display-box" readonly>
                         </div>
-                    </div>
+                     </div>
                     <div class="k5-grid-group">
                         <div class="k5-grid-cell-label">Motor</div>
-                        <div class="k5-grid-cell-display">
+                         <div class="k5-grid-cell-display">
                             <input type="text" id="k5-display-motor-summary" class="panel-input k5-summary-display-box" readonly>
                         </div>
                     </div>
-                </div>
+                 </div>
                 <div class="k5-grid-row">
                     <div class="k5-grid-group">
                         <div class="k5-grid-cell-label">Remote</div>
-                        <div class="k5-grid-cell-display">
+                         <div class="k5-grid-cell-display">
                             <input type="text" id="k5-display-remote-summary" class="panel-input k5-summary-display-box" readonly>
                         </div>
-                    </div>
+                     </div>
                     <div class="k5-grid-group">
                         <div class="k5-grid-cell-label">Charger</div>
-                        <div class="k5-grid-cell-display">
+                         <div class="k5-grid-cell-display">
                             <input type="text" id="k5-display-charger-summary" class="panel-input k5-summary-display-box" readonly>
                         </div>
                     </div>
-                </div>
+                 </div>
                 <div class="k5-grid-row">
                     <div class="k5-grid-group">
                         <div class="k5-grid-cell-label">3MCord</div>
-                        <div class="k5-grid-cell-display">
+                         <div class="k5-grid-cell-display">
                             <input type="text" id="k5-display-cord-summary" class="panel-input k5-summary-display-box" readonly>
                         </div>
-                    </div>
+                     </div>
                     <div class="k5-grid-group k5-grid-group-total">
                         <div class="k5-grid-cell-label">Total</div>
-                        <div class="k5-grid-cell-display">
+                         <div class="k5-grid-cell-display">
                             <input type="text" id="k5-display-accessories-total" class="panel-input k5-summary-display-box k5-summary-total-box" readonly>
                         </div>
-                    </div>
+                     </div>
                 </div>
             </div>
         </div>
@@ -14332,7 +14469,7 @@ margin: 0;
     <svg class="toggle-arrow arrow-right" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
     </svg>
-    <svg class="toggle-arrow arrow-left" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+     <svg class="toggle-arrow arrow-left" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
     </svg>
 </div>
@@ -15325,7 +15462,7 @@ export class DetailConfigView {
     handleSequenceCellClick({ rowIndex }) {
         const { ui } = this.stateService.getState();
         const { activeEditMode } = ui;
-        if (activeEditMode === 'K2_LF_SELECT' || activeEditMode === 'K2_LF_DELETE_SELECT') {
+        if (activeEditMode === 'K2_LF_SELECT' || activeEditMode === 'K2_LF_DELETE_SELECT' || activeEditMode === 'K2_SSET_SELECT') {
             this.k2View.handleSequenceCellClick({ rowIndex });
         }
     }
@@ -15336,6 +15473,11 @@ export class DetailConfigView {
 
     handleLFDeleteRequest() {
         this.k2View.handleLFDeleteRequest();
+    }
+
+    // [NEW] Delegate SSet request to K2 view
+    handleSSetRequest() {
+        this.k2View.handleSSetRequest();
     }
 
     handleToggleK3EditMode() {
@@ -16706,6 +16848,8 @@ export class K2FabricView {
         this.publish = publishStateChangeCallback;
         
         this.indexesToExcludeFromBatchUpdate = new Set();
+        // [NEW] Track the last enabled input for the SSet Enter key logic
+        this.lastSSetInput = null;
 
         console.log("K2FabricView Initialized.");
     }
@@ -16761,6 +16905,10 @@ export class K2FabricView {
                 this._enterFCMode(false);
             }
         } else {
+            // [FIX] Â¶ÇÊ??ØÂ? N&C Ê®°Â??Ä?∫Ô??ãÂ?Ëß∏Áôº blur
+            if (currentMode === 'K2' && document.activeElement.matches('.panel-input')) {
+                document.activeElement.blur();
+            }
             this._exitAllK2Modes();
         }
     }
@@ -16780,70 +16928,106 @@ export class K2FabricView {
                 this.stateService.dispatch(quoteActions.removeLFModifiedRows(indexesToClear));
             }
         }
+        // [MODIFIED] Clear other K2 mode selections when entering this one
+        this.stateService.dispatch(uiActions.clearLFSelection());
+        this.stateService.dispatch(uiActions.clearSSetSelection());
         this.stateService.dispatch(uiActions.setActiveEditMode('K2'));
         this._updatePanelInputsState(); 
         this.stateService.dispatch(uiActions.setActiveCell(null, null));
     }
 
     handlePanelInputBlur({ type, field, value }) {
+        const currentMode = this._getState().ui.activeEditMode;
+        
         if (type === 'LF') {
-            this._applyLFChanges();
-        } else {
-            this.stateService.dispatch(quoteActions.batchUpdatePropertyByType(type, field, value, this.indexesToExcludeFromBatchUpdate));
+            // No action on blur for LF, only on Apply/Exit
+        } else if (currentMode === 'K2') {
+            // [FIX] ?™Ê???K2 (N&C) Ê®°Â?‰∏ãÔ?blur ?çËß∏?ºÂÑ≤Â≠?            this.stateService.dispatch(quoteActions.batchUpdatePropertyByType(type, field, value, this.indexesToExcludeFromBatchUpdate));
         }
+        // SSet mode also only applies on exit/enter
     }
 
     handlePanelInputEnter() {
-        const inputs = Array.from(document.querySelectorAll('.panel-input:not([disabled])'));
+        const { activeEditMode } = this._getState().ui;
         const activeElement = document.activeElement;
-        const currentIndex = inputs.indexOf(activeElement);
-        const nextInput = inputs[currentIndex + 1];
 
-        if (nextInput) {
-            nextInput.focus();
-            nextInput.select();
-        } else {
-            if (activeElement.dataset.type === 'LF' || (activeElement.dataset.type !== 'LF' && this._getState().ui.activeEditMode === 'K2')) {
-                this._applyLFChanges();
+        if (activeEditMode === 'K2') {
+            // [FIX] Â∞?querySelector ÁØÑÂ??êÂ???#fabric-batch-table ??            const inputs = Array.from(document.querySelectorAll('#fabric-batch-table .panel-input:not([disabled])'));
+            const currentIndex = inputs.indexOf(activeElement);
+            const nextInput = inputs[currentIndex + 1];
+
+            if (nextInput) {
+                nextInput.focus();
+                nextInput.select();
+            } else {
+                // [FIX] ‰øÆÊ≠£ N&C Ê®°Â???Enter ?µÈ?Ëº?                // 1. ?åÊ≠•?∞Âëº??handlePanelInputBlur (?≤Â??ÄÂæå‰?Á≠ÜË???
+                if (activeElement && activeElement.matches('.panel-input')) {
+                    this.handlePanelInputBlur({
+                        type: activeElement.dataset.type,
+                        field: activeElement.dataset.field,
+                        value: activeElement.value
+                    });
+                }
+                // 2. Ê≠?∏∏?Ä?∫Ê®°Âºè„Ä?                this._exitAllK2Modes();
             }
-            this._exitAllK2Modes();
+        } else if (activeEditMode === 'K2_LF_SELECT') {
+            // [FIX] Implement correct Enter key logic for LF mode
+            const lfFnameInput = document.querySelector('input[data-type="LF"][data-field="fabric"]');
+            const lfFcolorInput = document.querySelector('input[data-type="LF"][data-field="color"]');
+
+            if (activeElement === lfFnameInput && lfFcolorInput) {
+                // User pressed Enter on F-Name, move to F-Color
+                lfFcolorInput.focus();
+                lfFcolorInput.select();
+            } else if (activeElement === lfFcolorInput) {
+                // User pressed Enter on F-Color (last input), apply changes and exit
+                this._applyLFChanges();
+                this._exitAllK2Modes();
+            }
+        } else if (activeEditMode === 'K2_SSET_SELECT') {
+            if (activeElement === this.lastSSetInput) {
+                // If user presses Enter on the last input, apply changes
+                this._applySSetChanges();
+                this._exitAllK2Modes();
+            } else {
+                // Move to the next enabled input
+                const inputs = Array.from(document.querySelectorAll('#fabric-batch-table .panel-input:not([disabled])'));
+                const currentIndex = inputs.indexOf(activeElement);
+                const nextInput = inputs[currentIndex + 1];
+                if (nextInput) {
+                    nextInput.focus();
+                    nextInput.select();
+                }
+            }
         }
     }
 
     handleSequenceCellClick({ rowIndex }) {
         const { activeEditMode } = this._getState().ui;
+        const item = this._getItems()[rowIndex];
+        if (!item || (item.width === null && item.height === null)) return; // Ignore empty rows
 
-        if (activeEditMode === 'K2_LF_SELECT' || activeEditMode === 'K2_LF_DELETE_SELECT') {
-            const item = this._getItems()[rowIndex];
-            
-            if (activeEditMode === 'K2_LF_DELETE_SELECT') {
-                const { lfModifiedRowIndexes } = this._getState().quoteData.uiMetadata;
-                if (!lfModifiedRowIndexes.includes(rowIndex)) {
-                    this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Only items with a Light-Filter setting (pink background) can be selected for deletion.', type: 'error' });
-                    return;
-                }
-            }
-
+        if (activeEditMode === 'K2_LF_SELECT') {
             const eligibleTypes = ['B2', 'B3', 'B4'];
-            if (activeEditMode === 'K2_LF_SELECT' && !eligibleTypes.includes(item.fabricType)) {
-                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Only items with TYPE "B2", "B3", or "B4" can be selected.', type: 'error' });
+            if (!eligibleTypes.includes(item.fabricType)) {
+                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Only items with TYPE "B2", "B3", or "B4" can be selected for Light-Filter.', type: 'error' });
                 return;
             }
             this.stateService.dispatch(uiActions.toggleLFSelection(rowIndex));
+            this._updatePanelInputsState(); // Update to enable/disable LF inputs
             
-            if (activeEditMode === 'K2_LF_SELECT') {
-                this._updatePanelInputsState();
-                const { lfSelectedRowIndexes } = this._getState().ui;
-                if (lfSelectedRowIndexes.length > 0) {
-                    setTimeout(() => {
-                        const fnameInput = document.querySelector('input[data-type="LF"][data-field="fabric"]');
-                        if (fnameInput) {
-                            fnameInput.focus();
-                            fnameInput.select();
-                        }
-                    }, 50);
-                }
+        } else if (activeEditMode === 'K2_LF_DELETE_SELECT') {
+            const { lfModifiedRowIndexes } = this._getState().quoteData.uiMetadata;
+            if (!lfModifiedRowIndexes.includes(rowIndex)) {
+                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Only items with a Light-Filter setting (pink background) can be selected for deletion.', type: 'error' });
+                return;
             }
+            this.stateService.dispatch(uiActions.toggleLFSelection(rowIndex));
+
+        } else if (activeEditMode === 'K2_SSET_SELECT') {
+            // [NEW] Logic for SSet selection
+            this.stateService.dispatch(uiActions.toggleSSetSelection(rowIndex));
+            this._updatePanelInputsState(); // Update to enable/disable inputs based on selection
         }
     }
 
@@ -16854,6 +17038,9 @@ export class K2FabricView {
             this._applyLFChanges();
             this._exitAllK2Modes();
         } else {
+            // Clear other K2 mode selections
+            this.stateService.dispatch(uiActions.clearLFSelection());
+            this.stateService.dispatch(uiActions.clearSSetSelection());
             this.stateService.dispatch(uiActions.setActiveEditMode('K2_LF_SELECT'));
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Please select items with TYPE \'B2\', \'B3\', or \'B4\' to edit.' });
         }
@@ -16871,17 +17058,41 @@ export class K2FabricView {
             }
             this._exitAllK2Modes();
         } else {
+            // Clear other K2 mode selections
+            this.stateService.dispatch(uiActions.clearLFSelection());
+            this.stateService.dispatch(uiActions.clearSSetSelection());
             this.stateService.dispatch(uiActions.setActiveEditMode('K2_LF_DELETE_SELECT'));
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Please select the roller blinds for which you want to cancel the Light-Filter fabric setting. After selection, click the LF-Del button again.' });
         }
     }
 
+    // [NEW] Handler for the SSet button
+    handleSSetRequest() {
+        const { activeEditMode } = this._getState().ui;
+
+        if (activeEditMode === 'K2_SSET_SELECT') {
+            // If already in SSet mode, clicking again applies the changes
+            this._applySSetChanges();
+            this._exitAllK2Modes();
+        } else {
+            // Clear other K2 mode selections
+            this.stateService.dispatch(uiActions.clearLFSelection());
+            this.stateService.dispatch(uiActions.clearSSetSelection());
+            this.stateService.dispatch(uiActions.setActiveEditMode('K2_SSET_SELECT'));
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'SSet Mode: Select items from the table to set their Fabric & Color.' });
+            this._updatePanelInputsState(); // Disable all inputs initially
+        }
+    }
+
+
     _exitAllK2Modes() {
         this.stateService.dispatch(uiActions.setActiveEditMode(null));
         this.stateService.dispatch(uiActions.clearMultiSelectSelection());
         this.stateService.dispatch(uiActions.clearLFSelection());
+        this.stateService.dispatch(uiActions.clearSSetSelection()); // [NEW] Clear SSet selection
         
         this.indexesToExcludeFromBatchUpdate.clear();
+        this.lastSSetInput = null; // [NEW] Clear last input tracker
 
         this._updatePanelInputsState();
     }
@@ -16900,15 +17111,72 @@ export class K2FabricView {
         }
     }
 
+    // [NEW] Logic to apply SSet changes
+    _applySSetChanges() {
+        const { sSetSelectedRowIndexes } = this._getState().ui;
+        if (sSetSelectedRowIndexes.length === 0) {
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'No items were selected.' });
+            return;
+        }
+
+        const typeMap = {};
+        const allPanelInputs = document.querySelectorAll('#fabric-batch-table .panel-input');
+        
+        allPanelInputs.forEach(input => {
+            if (!input.disabled && input.dataset.type !== 'LF') {
+                const type = input.dataset.type;
+                const field = input.dataset.field;
+                if (!typeMap[type]) {
+                    typeMap[type] = {};
+                }
+                typeMap[type][field] = input.value;
+            }
+        });
+
+        // Filter map to only include entries where both fabric and color are set
+        const finalTypeMap = {};
+        let typesApplied = 0;
+        for (const type in typeMap) {
+            if (typeMap[type].fabric && typeMap[type].color) {
+                finalTypeMap[type] = typeMap[type];
+                typesApplied++;
+            }
+        }
+
+        if (typesApplied > 0) {
+            // [FIX] Identify which selected rows will actually be modified
+            const items = this._getItems();
+            const modifiedIndexes = sSetSelectedRowIndexes.filter(index => {
+                const itemType = items[index]?.fabricType;
+                return itemType && finalTypeMap[itemType];
+            });
+
+            if (modifiedIndexes.length > 0) {
+                this.stateService.dispatch(quoteActions.batchUpdatePropertiesForIndexes(modifiedIndexes, finalTypeMap));
+                
+                // [FIX] ÁßªÈô§Â§öÈ???dispatch??                // `batchUpdatePropertiesForIndexes` ??reducer 
+                // Â∑≤Á??ÉËá™?ïË???`lfModifiedRowIndexes` ?ÑÊ??§„Ä?                // this.stateService.dispatch(quoteActions.removeLFModifiedRows(modifiedIndexes));
+
+                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: `Fabric details applied to ${modifiedIndexes.length} items.` });
+            } else {
+                 this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'No selected items matched the types you edited.' });
+            }
+        } else {
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'No changes applied. Please fill in both F-Name and F-Color for a type.' });
+        }
+    }
+
+
     _updatePanelInputsState() {
         const { ui, quoteData } = this._getState();
-        const { activeEditMode, lfSelectedRowIndexes } = ui;
+        const { activeEditMode, lfSelectedRowIndexes, sSetSelectedRowIndexes } = ui;
         const items = this._getItems();
         const { lfModifiedRowIndexes } = quoteData.uiMetadata;
         const presentTypes = new Set(items.map(item => item.fabricType).filter(Boolean));
         
-        const allPanelInputs = document.querySelectorAll('.panel-input');
+        const allPanelInputs = document.querySelectorAll('#fabric-batch-table .panel-input');
         let firstEnabledInput = null;
+        this.lastSSetInput = null; // Reset last input tracker
         
         if (activeEditMode === 'K2') {
             allPanelInputs.forEach(input => {
@@ -16946,7 +17214,49 @@ export class K2FabricView {
                 const isLFRow = input.dataset.type === 'LF';
                 const hasSelection = lfSelectedRowIndexes.length > 0;
                 input.disabled = !(isLFRow && hasSelection);
+                
+                // [FIX] Auto-fill LF inputs from first selected item
+                if (isLFRow && hasSelection) {
+                    const firstItem = items[lfSelectedRowIndexes[0]];
+                    if (firstItem && lfModifiedRowIndexes.includes(lfSelectedRowIndexes[0])) {
+                        // [FIX] Remove "Light-filter " prefix when populating input
+                        input.value = (firstItem[input.dataset.field] || '').replace('Light-filter ', '');
+                    }
+                }
             });
+        } else if (activeEditMode === 'K2_SSET_SELECT') {
+            // [NEW] Logic for SSet mode
+            const selectedTypes = new Set(
+                sSetSelectedRowIndexes.map(index => items[index].fabricType).filter(Boolean)
+            );
+
+            allPanelInputs.forEach(input => {
+                const type = input.dataset.type;
+                const isEnabled = type !== 'LF' && selectedTypes.has(type);
+                input.disabled = !isEnabled;
+
+                if (isEnabled) {
+                    // Find the first selected item of this type to pre-fill data
+                    const firstMatchingIndex = sSetSelectedRowIndexes.find(index => items[index].fabricType === type);
+                    const firstItem = items[firstMatchingIndex];
+                    input.value = firstItem[input.dataset.field] || '';
+
+                    if (!firstEnabledInput) {
+                        firstEnabledInput = input;
+                    }
+                    // Track the last enabled input
+                    this.lastSSetInput = input;
+                } else {
+                    input.value = '';
+                }
+            });
+
+            if (firstEnabledInput) {
+                setTimeout(() => {
+                    firstEnabledInput.focus();
+                    firstEnabledInput.select();
+                }, 50);
+            }
         } else {
              allPanelInputs.forEach(input => {
                 input.disabled = true;
@@ -16957,6 +17267,8 @@ export class K2FabricView {
     
     activate() {
         this.stateService.dispatch(uiActions.setVisibleColumns(['sequence', 'fabricTypeDisplay', 'fabric', 'color']));
+        // [MODIFIED] When tab activates, ensure all K2 modes are exited
+        this._exitAllK2Modes();
     }
 }
 --- FILE END ---
@@ -17502,9 +17814,12 @@ describe('QuickQuoteView', () => {
  * @fileoverview Utility functions for parsing and stringifying CSV data.
  */
 
+// [FIX] ?ØÂÖ•?∫Ê???initialState Ê®°Á?Ôºå‰ª•‰øÆÂæ© csvToData_OldFormat ??ReferenceError
+import { initialState } from '../config/initial-state.js';
+
 // [MODIFIED v6285 Phase 5] Define the exact keys and order for all snapshot data
 const f3SnapshotKeys = [
-    'quoteId', 'issueDate', 'dueDate', 
+    'quoteId', 'issueDate', 'dueDate',
     'customer.name', 'customer.address', 'customer.phone', 'customer.email'
 ];
 const f1SnapshotKeys = [
@@ -17524,8 +17839,7 @@ const getNestedValue = (obj, path) => {
 
 /**
  * Converts the application's quote data object into a comprehensive CSV formatted string,
- * including all detailed item properties and 
-LF status.
+ * including all detailed item properties and LF status.
  * @param {object} quoteData The application's quote data.
  * @returns {string} A string in CSV format.
  */
@@ -17538,9 +17852,9 @@ export function dataToCsv(quoteData) {
 
     // --- [MODIFIED v6285 Phase 5] Create Project Summary Header and Row ---
     const projectHeaders = [...f3SnapshotKeys, ...f1SnapshotKeys];
-    
+
     const f1Snapshot = quoteData.f1Snapshot || {};
-    
+
     const projectValues = [
         // F3 Values
         quoteData.quoteId || '',
@@ -17556,55 +17870,57 @@ export function dataToCsv(quoteData) {
             return (value !== null && value !== undefined) ? value : '';
         })
     ].map(value => {
-        const strValue = String(value).replace(/\n/g, ' '); // Replace newlines in addresses
-        if (strValue.includes(',')) return `"${strValue}"`;
+        // [MODIFIED] Âº∑Â? CSV ?≤Â??èËºØ
+        let strValue = (value === null || value === undefined) ? '' : String(value);
+        strValue = strValue.replace(/"/g, '""'); // 1. ËΩâÁæ©Ê¨Ñ‰??ßÈÉ®?ÑÂ???        strValue = strValue.replace(/\n/g, ' '); // 2. ?øÊ??õË?Á¨?        
+        // 3. [FIX] Â¶ÇÊ??ÖÂê´?óË??ÅÁ©∫?ºÊ?ÂºïË?ÔºåÂ?‰ΩøÁî®ÂºïË??ÖË?
+        if (strValue.includes(',') || strValue.includes(' ') || strValue.includes('"')) {
+            return `"${strValue}"`;
+        }
         return strValue;
     });
 
     // --- Create Item Header and Rows ---
     const itemHeaders = [
-        '#', 'Width', 'Height', 'Type', 'Price', 
-        'Location', 'F-Name', 'F-Color', 'Over', 'O/I', 'L/R', 
-    
-    'Dual', 'Chain', 'Winder', 'Motor', 'IsLF'
+        '#', 'Width', 'Height', 'Type', 'Price',
+        'Location', 'F-Name', 'F-Color', 'Over', 'O/I', 'L/R',
+        'Dual', 'Chain', 'Winder', 'Motor', 'IsLF'
     ];
-    
+
     const itemRows = productData.items.map((item, index) => {
         if (item.width || item.height) {
             const rowData = [
                 index + 1,
-               
- item.width || '',
+                item.width || '',
                 item.height || '',
                 item.fabricType || '',
                 item.linePrice !== null ? item.linePrice.toFixed(2) : '',
-                item.location || 
-'',
+                item.location || '',
                 item.fabric || '',
                 item.color || '',
                 item.over || '',
                 item.oi || '',
-       
-         item.lr || '',
+                item.lr || '',
                 item.dual || '',
                 item.chain || '',
                 item.winder || '',
-              
-  item.motor || '',
+                item.motor || '',
                 lfModifiedRowIndexes.includes(index) ? 1 : 0
             ];
 
             return rowData.map(value => {
-                const strValue = String(value);
-         
-       if (strValue.includes(',')) {
+                // [MODIFIED] Âº∑Â? CSV ?≤Â??èËºØ (?åÊ®£?âÁî®?ºÈ??ÆË?)
+                let strValue = (value === null || value === undefined) ? '' : String(value);
+                strValue = strValue.replace(/"/g, '""');
+                strValue = strValue.replace(/\n/g, ' ');
+                
+                if (strValue.includes(',') || strValue.includes(' ') || strValue.includes('"')) {
                     return `"${strValue}"`;
                 }
                 return strValue;
             }).join(',');
         }
-   
-     return null;
+        return null;
     }).filter(row => row !== null);
 
 
@@ -17620,19 +17936,52 @@ export function dataToCsv(quoteData) {
 
 
 /**
+ * [PRIVATE] ËºîÂä©?ΩÂ?Ôºå‰Ωø?®Ê≠£Ë¶èË°®Á§∫Â?‰æÜÂ??®Âú∞Ëß?? CSV ?óÔ??ΩË??ÜÂ??üÂÖß?ÑÈÄóË??? * @param {string} line - ?ÆË? CSV Â≠ó‰∏≤?? * @returns {Array<string>} - Ëß??ÂæåÁ?Ê¨Ñ‰?????? */
+function _parseCsvLine(line) {
+    const values = [];
+    
+    // [FIX] ‰øÆÊ≠£ RegexÔº?    // 1. ÁßªÈô§Á¨¨‰??ãÁæ§Áµ?(?:^|,) ?ÄÂæåÂ?È§òÁ? |ÔºåÈÄôÊ?Â∞éËá¥?°È?Ëø¥Â?
+    // 2. Â∞áÁ¨¨‰∫åÂÄãÁæ§ÁµÑÊîπ?∫Ê??≤Áæ§Áµ?((...))ÔºåÁ¢∫‰ø?match[1] ÂßãÁ??ØÊ??ëÊÉ≥Ë¶ÅÁ?Ê¨Ñ‰??ßÂÆπ
+    const regex = /(?:^|,)((?:"(?:[^"]|"")*"|[^,]*))/g;
+    let match;
+    while (match = regex.exec(line)) {
+        if (match[1] === undefined || match[1] === null) continue;
+
+        let value = match[1];
+
+        // [FIX] ÁßªÈô§?ôÂÄãÈåØË™§Á??èËºØ?Çmatch[1] (?ïÁç≤Áæ§Á?) ‰∏çÊ??ÖÂê´?ãÈ†≠?ÑÈÄóË???        // if (value.startsWith(',')) {
+        //     value = value.substring(1);
+        // }
+
+        // ÁßªÈô§ÂºïË?‰∏¶Â?ËΩâÁæ©
+        if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.substring(1, value.length - 1).replace(/""/g, '"');
+        }
+        values.push(value.trim());
+    }
+
+    // ?ïÁ?Ë°åÂ∞æ?âÁ©∫?ºÁ??ÖÊ?
+    if (line.endsWith(',')) {
+        values.push('');
+    }
+
+    return values;
+}
+
+
+/**
  * Converts a CSV formatted string into an object containing item objects and LF indexes.
  * This function is "pure" and has no external dependencies.
- * @param {string} csvString 
-The string containing CSV data.
+ * @param {string} csvString The string containing CSV data.
  * @returns {{items: Array<object>, lfIndexes: Array<number>, f1Snapshot: object, f3Data: object}|null} An object with items, LF status, F1 snapshot, and F3 data, or null if parsing fails.
  */
 export function csvToData(csvString) {
     try {
         const lines = csvString.trim().split('\n');
-        
+
         // [MODIFIED v6285 Phase 5] Parse new 4-part format
         if (lines.length < 4) {
-             // Fallback for old format (Phase 3/4)
+            // Fallback for old format (Phase 3/4)
             return csvToData_OldFormat(csvString);
         }
 
@@ -17641,8 +17990,8 @@ export function csvToData(csvString) {
         const itemHeaderLine = lines[3];
         const itemDataLines = lines.slice(4);
 
-        const projectHeaders = projectHeaderLine.split(',');
-        const projectValues = projectDataLine.split(','); // Simplified parse, assumes no commas in F3 data for now
+        const projectHeaders = _parseCsvLine(projectHeaderLine);
+        const projectValues = _parseCsvLine(projectDataLine);
 
         // --- 1. Parse Project Data (F1 + F3) ---
         const f1Snapshot = {};
@@ -17650,11 +17999,18 @@ export function csvToData(csvString) {
 
         projectHeaders.forEach((header, index) => {
             const value = projectValues[index] || null;
-            if (!value) return; // Skip empty values
+            if (value === null || value === '') return; // [MODIFIED] Ê™¢Êü•Á©∫Â?‰∏?
+            let finalValue;
 
-            const numValue = parseFloat(value);
-            const finalValue = isNaN(numValue) ? value : numValue;
+            // [FIX] Ê™¢Êü•?ØÂê¶??F1 ?∏Â???            if (f1SnapshotKeys.includes(header)) {
+                // ?ôÊòØ F1 keyÔºåÂ?Ë©¶Ë??∫Êï∏Â≠?                const numValue = parseFloat(value);
+                finalValue = isNaN(numValue) ? null : numValue;
+            } else {
+                // ?ôÊòØ F3 key (?ñÂÖ∂‰ªñÂ?‰∏?Ôºå‰??ÅÁÇ∫Â≠ó‰∏≤
+                finalValue = value;
+            }
 
+            if (finalValue === null) return; // ‰∏çÂÑ≤Â≠òÁÑ°?àÂÄ?
             if (f1SnapshotKeys.includes(header)) {
                 f1Snapshot[header] = finalValue;
             } else if (header.startsWith('customer.')) {
@@ -17668,7 +18024,7 @@ export function csvToData(csvString) {
         // --- 2. Parse Item Data ---
         const items = [];
         const lfIndexes = [];
-        const itemHeaders = itemHeaderLine.split(',');
+        const itemHeaders = _parseCsvLine(itemHeaderLine);
         const isLfIndex = itemHeaders.indexOf('IsLF');
 
         itemDataLines.forEach((line) => {
@@ -17676,9 +18032,10 @@ export function csvToData(csvString) {
             if (!trimmedLine || trimmedLine.toLowerCase().startsWith('total')) {
                 return;
             }
-            
-            const values = trimmedLine.split(',');
 
+            // [FIX] ‰ΩøÁî®?∞Á? CSV Ëß????            const values = _parseCsvLine(trimmedLine);
+
+            // [FIX] ÁßªÈô§?ºÁ?ÂºïË? (ËºîÂä©?ΩÂ?Â∑≤ÂÖßÂµåËá≥ _parseCsvLine)
             const item = {
                 itemId: `item-${Date.now()}-${items.length}`,
                 width: parseInt(values[1], 10) || null,
@@ -17697,7 +18054,7 @@ export function csvToData(csvString) {
                 motor: values[14] || ''
             };
             items.push(item);
-            
+
             if (isLfIndex > -1) {
                 const isLf = parseInt(values[isLfIndex], 10) === 1;
                 if (isLf) {
@@ -17729,8 +18086,8 @@ function csvToData_OldFormat(csvString) {
     if (headerIndex === -1) return null; // Not a recognized format
 
     const headerLine = lines[headerIndex];
-    const headers = headerLine.split(',');
-    
+    const headers = headerLine.split(','); // Old parser OK here
+
     const f1Snapshot = {};
     const snapshotKeys = Object.keys(initialState.quoteData.f1Snapshot);
     const snapshotIndices = {};
@@ -17746,20 +18103,20 @@ function csvToData_OldFormat(csvString) {
     dataLines.forEach((line, index) => {
         const trimmedLine = line.trim();
         if (!trimmedLine || trimmedLine.toLowerCase().startsWith('total')) {
-            return; 
+            return;
         }
-        
-        const values = trimmedLine.split(',');
+
+        const values = trimmedLine.split(','); // Old parser OK here
 
         if (values[0] === 'F1_SNAPSHOT' && values.length >= 3) {
-             // This is the Phase 3 format, not Phase 4. Handle it anyway.
-             const key = values[1];
-             const value = values[2];
-             if (f1Snapshot.hasOwnProperty(key)) {
-                 const numValue = parseFloat(value);
-                 f1Snapshot[key] = isNaN(numValue) ? value : numValue;
-             }
-             return; // Skip to the next line
+            // This is the Phase 3 format, not Phase 4. Handle it anyway.
+            const key = values[1];
+            const value = values[2];
+            if (f1Snapshot.hasOwnProperty(key)) {
+                const numValue = parseFloat(value);
+                f1Snapshot[key] = isNaN(numValue) ? value : numValue;
+            }
+            return; // Skip to the next line
         }
 
         if (index === 0) {
@@ -17791,7 +18148,7 @@ function csvToData_OldFormat(csvString) {
             motor: values[14] || ''
         };
         items.push(item);
-        
+
         if (isLfIndex > -1) {
             const isLf = parseInt(values[isLfIndex], 10) === 1;
             if (isLf) {
